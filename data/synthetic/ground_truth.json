@@ -1,0 +1,254 @@
+{
+  "P-101": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Shamshabad"
+  },
+  "P-102": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Shamshabad"
+  },
+  "P-103": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Shamshabad"
+  },
+  "P-104": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Shamshabad"
+  },
+  "P-105": {
+    "is_anomalous": true,
+    "anomaly_type": "OVERLAP",
+    "description": "Severe boundary overlap (>12.4%) with neighboring parcel P-106",
+    "village": "Shamshabad"
+  },
+  "P-106": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Shamshabad"
+  },
+  "P-107": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Shamshabad"
+  },
+  "P-108": {
+    "is_anomalous": true,
+    "anomaly_type": "RAPID_RESALE",
+    "description": "Suspicious transaction velocity: 4 transfers recorded within 24 days with steep price escalation.",
+    "village": "Shamshabad"
+  },
+  "P-109": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Shamshabad"
+  },
+  "P-110": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Shamshabad"
+  },
+  "P-111": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Shamshabad"
+  },
+  "P-112": {
+    "is_anomalous": true,
+    "anomaly_type": "AREA_DEVIATION",
+    "description": "Claimed area in Dharani RoR deed (4500 sqm) exceeds calculated GIS geometry area (2800 sqm) by 60%",
+    "village": "Shamshabad"
+  },
+  "P-113": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Shamshabad"
+  },
+  "P-114": {
+    "is_anomalous": true,
+    "anomaly_type": "RAPID_RESALE",
+    "description": "Suspicious transaction velocity: 4 transfers recorded within 24 days with steep price escalation.",
+    "village": "Shamshabad"
+  },
+  "P-115": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Shamshabad"
+  },
+  "P-116": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Mamidipally"
+  },
+  "P-117": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Mamidipally"
+  },
+  "P-118": {
+    "is_anomalous": true,
+    "anomaly_type": "BOUNDARY_GAP",
+    "description": "Unmapped spatial gap (>8m width) along western parcel boundary",
+    "village": "Mamidipally"
+  },
+  "P-119": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Mamidipally"
+  },
+  "P-120": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Mamidipally"
+  },
+  "P-121": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Mamidipally"
+  },
+  "P-122": {
+    "is_anomalous": true,
+    "anomaly_type": "RAPID_RESALE",
+    "description": "Suspicious transaction velocity: 4 transfers recorded within 24 days with steep price escalation.",
+    "village": "Mamidipally"
+  },
+  "P-123": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Mamidipally"
+  },
+  "P-124": {
+    "is_anomalous": true,
+    "anomaly_type": "OVERLAP",
+    "description": "Boundary overlap with government road reserve / adjacent parcel P-125",
+    "village": "Mamidipally"
+  },
+  "P-125": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Mamidipally"
+  },
+  "P-126": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Mamidipally"
+  },
+  "P-127": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Mamidipally"
+  },
+  "P-128": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Mamidipally"
+  },
+  "P-129": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Mamidipally"
+  },
+  "P-130": {
+    "is_anomalous": true,
+    "anomaly_type": "AREA_DEVIATION",
+    "description": "Claimed area (8200 sqm) significantly deviates from GIS polygon area (5100 sqm)",
+    "village": "Mamidipally"
+  },
+  "P-131": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Kothwalguda"
+  },
+  "P-132": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Kothwalguda"
+  },
+  "P-133": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Kothwalguda"
+  },
+  "P-134": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Kothwalguda"
+  },
+  "P-135": {
+    "is_anomalous": true,
+    "anomaly_type": "LAND_USE_MISMATCH",
+    "description": "Registry claims Agricultural land, satellite scene confirms Commercial/Built-up construction",
+    "village": "Kothwalguda"
+  },
+  "P-136": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Kothwalguda"
+  },
+  "P-137": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Kothwalguda"
+  },
+  "P-138": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Kothwalguda"
+  },
+  "P-139": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Kothwalguda"
+  },
+  "P-140": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Kothwalguda"
+  },
+  "P-141": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Kothwalguda"
+  },
+  "P-142": {
+    "is_anomalous": false,
+    "anomaly_type": "CLEAN",
+    "description": "No anomaly detected",
+    "village": "Kothwalguda"
+  }
+}

@@ -1,0 +1,1979 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-101",
+        "survey_no": "100/A",
+        "khatian_no": "KH-200",
+        "ulpin": "36-78431-101-2026",
+        "owner_name": "Mahesh Kumar",
+        "village": "Shamshabad",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 11011.85,
+        "actual_area_sqm": 11011.85,
+        "land_use_claim": "Agricultural",
+        "revenue_court_status": "Clean",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43102788535968,
+              17.253905002151047
+            ],
+            [
+              78.43190500586367,
+              17.25394464214763
+            ],
+            [
+              78.43199729424283,
+              17.254985339897484
+            ],
+            [
+              78.43107843591353,
+              17.254867387766527
+            ],
+            [
+              78.43102788535968,
+              17.253905002151047
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-102",
+        "survey_no": "101/A",
+        "khatian_no": "KH-201",
+        "ulpin": "36-78431-102-2026",
+        "owner_name": "Mahesh Chary",
+        "village": "Shamshabad",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 10374.51,
+        "actual_area_sqm": 10374.51,
+        "land_use_claim": "Agricultural",
+        "revenue_court_status": "Clean",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43198438436394,
+              17.253905959443887
+            ],
+            [
+              78.43289372759497,
+              17.254001071057623
+            ],
+            [
+              78.43285530719395,
+              17.254889767530138
+            ],
+            [
+              78.43202997688756,
+              17.25495898829612
+            ],
+            [
+              78.43198438436394,
+              17.253905959443887
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-103",
+        "survey_no": "102/A",
+        "khatian_no": "KH-202",
+        "ulpin": "36-78431-103-2026",
+        "owner_name": "Suresh Chary",
+        "village": "Shamshabad",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 12689.95,
+        "actual_area_sqm": 12689.95,
+        "land_use_claim": "Agricultural",
+        "revenue_court_status": "Clean",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.4329440881244,
+              17.254017853136776
+            ],
+            [
+              78.43401188609133,
+              17.253901299751938
+            ],
+            [
+              78.43401116385036,
+              17.254989627879
+            ],
+            [
+              78.4329680501033,
+              17.254881095899965
+            ],
+            [
+              78.4329440881244,
+              17.254017853136776
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-104",
+        "survey_no": "103/A",
+        "khatian_no": "KH-203",
+        "ulpin": "36-78431-104-2026",
+        "owner_name": "Ananya Rao",
+        "village": "Shamshabad",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 11144.57,
+        "actual_area_sqm": 11144.57,
+        "land_use_claim": "Residential",
+        "revenue_court_status": "Clean",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43409144261445,
+              17.253967318909023
+            ],
+            [
+              78.43486854916868,
+              17.253919343275367
+            ],
+            [
+              78.43501949887327,
+              17.254970745206275
+            ],
+            [
+              78.43406142565465,
+              17.25499594635734
+            ],
+            [
+              78.43409144261445,
+              17.253967318909023
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-105",
+        "survey_no": "104/A",
+        "khatian_no": "KH-204",
+        "ulpin": "36-78431-105-2026",
+        "owner_name": "Prasad Sharma",
+        "village": "Shamshabad",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 15075.63,
+        "actual_area_sqm": 15075.63,
+        "land_use_claim": "Agricultural",
+        "revenue_court_status": "Court Case",
+        "is_anomalous": true,
+        "anomaly_type": "OVERLAP"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.4350072456183,
+              17.2540946231528
+            ],
+            [
+              78.43632570687545,
+              17.254010408126256
+            ],
+            [
+              78.43641588093286,
+              17.254973703950473
+            ],
+            [
+              78.43507234138006,
+              17.254965470429052
+            ],
+            [
+              78.4350072456183,
+              17.2540946231528
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-106",
+        "survey_no": "105/A",
+        "khatian_no": "KH-205",
+        "ulpin": "36-78431-106-2026",
+        "owner_name": "Prasad Reddy",
+        "village": "Shamshabad",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 10750.02,
+        "actual_area_sqm": 10750.02,
+        "land_use_claim": "Residential",
+        "revenue_court_status": "Mutation Pending",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43604091436724,
+              17.25390916487673
+            ],
+            [
+              78.43689557965513,
+              17.253957877592722
+            ],
+            [
+              78.43686595839539,
+              17.254896558177272
+            ],
+            [
+              78.43592020028588,
+              17.254905594720622
+            ],
+            [
+              78.43604091436724,
+              17.25390916487673
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-107",
+        "survey_no": "106/A",
+        "khatian_no": "KH-206",
+        "ulpin": "36-78431-107-2026",
+        "owner_name": "Srinivas Babu",
+        "village": "Shamshabad",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 11424.52,
+        "actual_area_sqm": 11424.52,
+        "land_use_claim": "Agricultural",
+        "revenue_court_status": "Clean",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43702713688884,
+              17.253972966435796
+            ],
+            [
+              78.43792403619342,
+              17.253941901406154
+            ],
+            [
+              78.4379033955644,
+              17.255037330917542
+            ],
+            [
+              78.43702960707705,
+              17.254971826201135
+            ],
+            [
+              78.43702713688884,
+              17.253972966435796
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-108",
+        "survey_no": "110/A",
+        "khatian_no": "KH-205",
+        "ulpin": "36-78431-108-2026",
+        "owner_name": "Venkat Babu",
+        "village": "Shamshabad",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 11940.02,
+        "actual_area_sqm": 11940.02,
+        "land_use_claim": "Agricultural",
+        "revenue_court_status": "Clean",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43093422772964,
+              17.25504582535959
+            ],
+            [
+              78.43188268049876,
+              17.254975891088353
+            ],
+            [
+              78.43204790467013,
+              17.255977999951973
+            ],
+            [
+              78.43101138994875,
+              17.2559869228502
+            ],
+            [
+              78.43093422772964,
+              17.25504582535959
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-109",
+        "survey_no": "111/A",
+        "khatian_no": "KH-206",
+        "ulpin": "36-78431-109-2026",
+        "owner_name": "Praveen Naidu",
+        "village": "Shamshabad",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 10874.08,
+        "actual_area_sqm": 10874.08,
+        "land_use_claim": "Residential",
+        "revenue_court_status": "Clean",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43206857038405,
+              17.255055199982312
+            ],
+            [
+              78.4328958096144,
+              17.254906420048783
+            ],
+            [
+              78.43291309060962,
+              17.255903548175198
+            ],
+            [
+              78.43194219656871,
+              17.256038581942867
+            ],
+            [
+              78.43206857038405,
+              17.255055199982312
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-110",
+        "survey_no": "112/A",
+        "khatian_no": "KH-207",
+        "ulpin": "36-78431-110-2026",
+        "owner_name": "Nagaraju Rao",
+        "village": "Shamshabad",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 11628.36,
+        "actual_area_sqm": 11628.36,
+        "land_use_claim": "Residential",
+        "revenue_court_status": "Mutation Pending",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43307527352529,
+              17.254962935576163
+            ],
+            [
+              78.43398108773306,
+              17.254979126380213
+            ],
+            [
+              78.43403290951794,
+              17.25594177037052
+            ],
+            [
+              78.43295297603329,
+              17.25589932550154
+            ],
+            [
+              78.43307527352529,
+              17.254962935576163
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-111",
+        "survey_no": "113/A",
+        "khatian_no": "KH-208",
+        "ulpin": "36-78431-111-2026",
+        "owner_name": "Ravi Yadav",
+        "village": "Shamshabad",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 9961.36,
+        "actual_area_sqm": 9961.36,
+        "land_use_claim": "Residential",
+        "revenue_court_status": "Mutation Pending",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43401227362683,
+              17.254952548321707
+            ],
+            [
+              78.43496691719804,
+              17.25507956457672
+            ],
+            [
+              78.43492988010102,
+              17.255893864151833
+            ],
+            [
+              78.4340995075213,
+              17.255951905258737
+            ],
+            [
+              78.43401227362683,
+              17.254952548321707
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-112",
+        "survey_no": "114/A",
+        "khatian_no": "KH-209",
+        "ulpin": "36-78431-112-2026",
+        "owner_name": "Kalyan Sharma",
+        "village": "Shamshabad",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 19371.9,
+        "actual_area_sqm": 12107.44,
+        "land_use_claim": "Agricultural",
+        "revenue_court_status": "Clean",
+        "is_anomalous": true,
+        "anomaly_type": "AREA_DEVIATION"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43491818188244,
+              17.254909423275087
+            ],
+            [
+              78.43587192982608,
+              17.255025489208343
+            ],
+            [
+              78.43600841587288,
+              17.255934431993364
+            ],
+            [
+              78.43491270554124,
+              17.255926323857302
+            ],
+            [
+              78.43491818188244,
+              17.254909423275087
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-113",
+        "survey_no": "115/A",
+        "khatian_no": "KH-210",
+        "ulpin": "36-78431-113-2026",
+        "owner_name": "Prasad Varma",
+        "village": "Shamshabad",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 10243.38,
+        "actual_area_sqm": 10243.38,
+        "land_use_claim": "Commercial",
+        "revenue_court_status": "Clean",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43609922427603,
+              17.255005822869023
+            ],
+            [
+              78.43704421567551,
+              17.25507215594045
+            ],
+            [
+              78.43685229620438,
+              17.255994144363875
+            ],
+            [
+              78.43603634207379,
+              17.255957394066083
+            ],
+            [
+              78.43609922427603,
+              17.255005822869023
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-114",
+        "survey_no": "116/A",
+        "khatian_no": "KH-211",
+        "ulpin": "36-78431-114-2026",
+        "owner_name": "Kavitha Naidu",
+        "village": "Shamshabad",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 10542.64,
+        "actual_area_sqm": 10542.64,
+        "land_use_claim": "Agricultural",
+        "revenue_court_status": "Clean",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.436953365038,
+              17.255028192359717
+            ],
+            [
+              78.43787231043471,
+              17.254986953050135
+            ],
+            [
+              78.43794074474127,
+              17.256040763185506
+            ],
+            [
+              78.43707517058807,
+              17.255902677810152
+            ],
+            [
+              78.436953365038,
+              17.255028192359717
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-115",
+        "survey_no": "120/A",
+        "khatian_no": "KH-210",
+        "ulpin": "36-78431-115-2026",
+        "owner_name": "Nagaraju Yadav",
+        "village": "Shamshabad",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 11007.45,
+        "actual_area_sqm": 11007.45,
+        "land_use_claim": "Agricultural",
+        "revenue_court_status": "Clean",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43100011722261,
+              17.255935730376105
+            ],
+            [
+              78.43203252556786,
+              17.256074103713967
+            ],
+            [
+              78.43190968895829,
+              17.256977789898972
+            ],
+            [
+              78.43102179404228,
+              17.25688056785371
+            ],
+            [
+              78.43100011722261,
+              17.255935730376105
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-116",
+        "survey_no": "121/A",
+        "khatian_no": "KH-211",
+        "ulpin": "36-78431-116-2026",
+        "owner_name": "Sujatha Yadav",
+        "village": "Mamidipally",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 11216.12,
+        "actual_area_sqm": 11216.12,
+        "land_use_claim": "Residential",
+        "revenue_court_status": "Clean",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43205250216002,
+              17.256007875806024
+            ],
+            [
+              78.43300572529573,
+              17.25600607073444
+            ],
+            [
+              78.43285011437924,
+              17.2569148312114
+            ],
+            [
+              78.43190389534848,
+              17.257035819723253
+            ],
+            [
+              78.43205250216002,
+              17.256007875806024
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-117",
+        "survey_no": "122/A",
+        "khatian_no": "KH-212",
+        "ulpin": "36-78431-117-2026",
+        "owner_name": "Ravi Varma",
+        "village": "Mamidipally",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 12020.77,
+        "actual_area_sqm": 12020.77,
+        "land_use_claim": "Commercial",
+        "revenue_court_status": "Clean",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43307574437556,
+              17.256066333105874
+            ],
+            [
+              78.43391150282508,
+              17.2559115850333
+            ],
+            [
+              78.43402560191984,
+              17.25703938988906
+            ],
+            [
+              78.43291713069041,
+              17.256947198092664
+            ],
+            [
+              78.43307574437556,
+              17.256066333105874
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-118",
+        "survey_no": "123/A",
+        "khatian_no": "KH-213",
+        "ulpin": "36-78431-118-2026",
+        "owner_name": "Suresh Goud",
+        "village": "Mamidipally",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 12853.76,
+        "actual_area_sqm": 12853.76,
+        "land_use_claim": "Residential",
+        "revenue_court_status": "Stay Order",
+        "is_anomalous": true,
+        "anomaly_type": "BOUNDARY_GAP"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43391384250369,
+              17.25605212043305
+            ],
+            [
+              78.43500316688586,
+              17.2559256782929
+            ],
+            [
+              78.43494505647563,
+              17.2569599607187
+            ],
+            [
+              78.43395301132578,
+              17.257024486608216
+            ],
+            [
+              78.43391384250369,
+              17.25605212043305
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-119",
+        "survey_no": "124/A",
+        "khatian_no": "KH-214",
+        "ulpin": "36-78431-119-2026",
+        "owner_name": "Ananya Varma",
+        "village": "Mamidipally",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 10342.7,
+        "actual_area_sqm": 10342.7,
+        "land_use_claim": "Commercial",
+        "revenue_court_status": "Mutation Pending",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43498462758804,
+              17.25594235964109
+            ],
+            [
+              78.43595785921777,
+              17.256045986213817
+            ],
+            [
+              78.43589023021268,
+              17.25691234325826
+            ],
+            [
+              78.43509902987134,
+              17.25697997561153
+            ],
+            [
+              78.43498462758804,
+              17.25594235964109
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-120",
+        "survey_no": "125/A",
+        "khatian_no": "KH-215",
+        "ulpin": "36-78431-120-2026",
+        "owner_name": "Ananya Yadav",
+        "village": "Mamidipally",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 10950.68,
+        "actual_area_sqm": 10950.68,
+        "land_use_claim": "Commercial",
+        "revenue_court_status": "Clean",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43598762001677,
+              17.256003515168207
+            ],
+            [
+              78.43687420083917,
+              17.25594493946741
+            ],
+            [
+              78.43691761711243,
+              17.25696766174369
+            ],
+            [
+              78.43594602294651,
+              17.25689404347689
+            ],
+            [
+              78.43598762001677,
+              17.256003515168207
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-121",
+        "survey_no": "126/A",
+        "khatian_no": "KH-216",
+        "ulpin": "36-78431-121-2026",
+        "owner_name": "Swapna Babu",
+        "village": "Mamidipally",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 11054.98,
+        "actual_area_sqm": 11054.98,
+        "land_use_claim": "Agricultural",
+        "revenue_court_status": "Clean",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.4369141986172,
+              17.256026220591455
+            ],
+            [
+              78.43789578835677,
+              17.256081084002602
+            ],
+            [
+              78.43802192708006,
+              17.256864171469978
+            ],
+            [
+              78.43694760092687,
+              17.25698379555566
+            ],
+            [
+              78.4369141986172,
+              17.256026220591455
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-122",
+        "survey_no": "130/A",
+        "khatian_no": "KH-215",
+        "ulpin": "36-78431-122-2026",
+        "owner_name": "Anand Kumar",
+        "village": "Mamidipally",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 11886.37,
+        "actual_area_sqm": 11886.37,
+        "land_use_claim": "Commercial",
+        "revenue_court_status": "Clean",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43094284736146,
+              17.256926462369748
+            ],
+            [
+              78.43203710284811,
+              17.257014208618667
+            ],
+            [
+              78.43194453420526,
+              17.25800692388486
+            ],
+            [
+              78.43106149939955,
+              17.257888081982873
+            ],
+            [
+              78.43094284736146,
+              17.256926462369748
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-123",
+        "survey_no": "131/A",
+        "khatian_no": "KH-216",
+        "ulpin": "36-78431-123-2026",
+        "owner_name": "Nagaraju Kumar",
+        "village": "Mamidipally",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 10964.74,
+        "actual_area_sqm": 10964.74,
+        "land_use_claim": "Residential",
+        "revenue_court_status": "Clean",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43191938616285,
+              17.256986210236484
+            ],
+            [
+              78.43293471572461,
+              17.25699340493361
+            ],
+            [
+              78.4329958151699,
+              17.25798467290946
+            ],
+            [
+              78.43209683304228,
+              17.25786968357423
+            ],
+            [
+              78.43191938616285,
+              17.256986210236484
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-124",
+        "survey_no": "132/A",
+        "khatian_no": "KH-217",
+        "ulpin": "36-78431-124-2026",
+        "owner_name": "Ananya Sharma",
+        "village": "Mamidipally",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 11559.06,
+        "actual_area_sqm": 11559.06,
+        "land_use_claim": "Agricultural",
+        "revenue_court_status": "Clean",
+        "is_anomalous": true,
+        "anomaly_type": "OVERLAP"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43298052425641,
+              17.25696786052108
+            ],
+            [
+              78.43402233450726,
+              17.256949731266786
+            ],
+            [
+              78.43388804178169,
+              17.25793972270957
+            ],
+            [
+              78.43298437632797,
+              17.257905709028936
+            ],
+            [
+              78.43298052425641,
+              17.25696786052108
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-125",
+        "survey_no": "133/A",
+        "khatian_no": "KH-218",
+        "ulpin": "36-78431-125-2026",
+        "owner_name": "Venkat Chary",
+        "village": "Mamidipally",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 9887.1,
+        "actual_area_sqm": 9887.1,
+        "land_use_claim": "Commercial",
+        "revenue_court_status": "Clean",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43394996128957,
+              17.257084653119858
+            ],
+            [
+              78.434938626149,
+              17.257072269820952
+            ],
+            [
+              78.43496006506248,
+              17.257860117665906
+            ],
+            [
+              78.43409985649367,
+              17.258017205517017
+            ],
+            [
+              78.43394996128957,
+              17.257084653119858
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-126",
+        "survey_no": "134/A",
+        "khatian_no": "KH-219",
+        "ulpin": "36-78431-126-2026",
+        "owner_name": "Swapna Chary",
+        "village": "Mamidipally",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 10051.98,
+        "actual_area_sqm": 10051.98,
+        "land_use_claim": "Agricultural",
+        "revenue_court_status": "Clean",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43509379925146,
+              17.2570852733966
+            ],
+            [
+              78.43601973914689,
+              17.256933262222123
+            ],
+            [
+              78.4359471282251,
+              17.25789274945984
+            ],
+            [
+              78.43498020805852,
+              17.257861727079995
+            ],
+            [
+              78.43509379925146,
+              17.2570852733966
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-127",
+        "survey_no": "135/A",
+        "khatian_no": "KH-220",
+        "ulpin": "36-78431-127-2026",
+        "owner_name": "Kalyan Chary",
+        "village": "Mamidipally",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 10087.66,
+        "actual_area_sqm": 10087.66,
+        "land_use_claim": "Agricultural",
+        "revenue_court_status": "Clean",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43597579462379,
+              17.257097061768757
+            ],
+            [
+              78.43690304061163,
+              17.257056814120393
+            ],
+            [
+              78.43694100167346,
+              17.257934601497197
+            ],
+            [
+              78.43609146352817,
+              17.258049084537898
+            ],
+            [
+              78.43597579462379,
+              17.257097061768757
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-128",
+        "survey_no": "136/A",
+        "khatian_no": "KH-221",
+        "ulpin": "36-78431-128-2026",
+        "owner_name": "Mahesh Rao",
+        "village": "Mamidipally",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 11574.05,
+        "actual_area_sqm": 11574.05,
+        "land_use_claim": "Residential",
+        "revenue_court_status": "Mutation Pending",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43701115366468,
+              17.25704368165506
+            ],
+            [
+              78.43788095936506,
+              17.2569593415651
+            ],
+            [
+              78.43804374187299,
+              17.257965836058165
+            ],
+            [
+              78.43700843904027,
+              17.25799959511208
+            ],
+            [
+              78.43701115366468,
+              17.25704368165506
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-129",
+        "survey_no": "140/A",
+        "khatian_no": "KH-220",
+        "ulpin": "36-78431-129-2026",
+        "owner_name": "Suresh Babu",
+        "village": "Mamidipally",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 11414.85,
+        "actual_area_sqm": 11414.85,
+        "land_use_claim": "Residential",
+        "revenue_court_status": "Clean",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43091143305458,
+              17.258016835518895
+            ],
+            [
+              78.43195057007658,
+              17.258070543978413
+            ],
+            [
+              78.43188148654559,
+              17.25904215578066
+            ],
+            [
+              78.43091602229305,
+              17.2588871649922
+            ],
+            [
+              78.43091143305458,
+              17.258016835518895
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-130",
+        "survey_no": "141/A",
+        "khatian_no": "KH-221",
+        "ulpin": "36-78431-130-2026",
+        "owner_name": "Anand Varma",
+        "village": "Mamidipally",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 17922.5,
+        "actual_area_sqm": 11201.56,
+        "land_use_claim": "Agricultural",
+        "revenue_court_status": "Clean",
+        "is_anomalous": true,
+        "anomaly_type": "AREA_DEVIATION"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.4320190070213,
+              17.258035042510723
+            ],
+            [
+              78.43289704077901,
+              17.257923977322793
+            ],
+            [
+              78.43302805746283,
+              17.25889924306956
+            ],
+            [
+              78.43201890383071,
+              17.25897387630207
+            ],
+            [
+              78.4320190070213,
+              17.258035042510723
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-131",
+        "survey_no": "142/A",
+        "khatian_no": "KH-222",
+        "ulpin": "36-78431-131-2026",
+        "owner_name": "Suresh Reddy",
+        "village": "Kothwalguda",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 10762.75,
+        "actual_area_sqm": 10762.75,
+        "land_use_claim": "Agricultural",
+        "revenue_court_status": "Clean",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43298384498306,
+              17.25801673445786
+            ],
+            [
+              78.4339545565431,
+              17.25808694125155
+            ],
+            [
+              78.43389085183988,
+              17.25899323836016
+            ],
+            [
+              78.43294773719052,
+              17.258929157169362
+            ],
+            [
+              78.43298384498306,
+              17.25801673445786
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-132",
+        "survey_no": "143/A",
+        "khatian_no": "KH-223",
+        "ulpin": "36-78431-132-2026",
+        "owner_name": "Ravi Goud",
+        "village": "Kothwalguda",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 10028.28,
+        "actual_area_sqm": 10028.28,
+        "land_use_claim": "Agricultural",
+        "revenue_court_status": "Clean",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43403433804458,
+              17.257959999415963
+            ],
+            [
+              78.43491323543925,
+              17.258050372898484
+            ],
+            [
+              78.4348645086229,
+              17.258941657104526
+            ],
+            [
+              78.43409969088817,
+              17.259049219289572
+            ],
+            [
+              78.43403433804458,
+              17.257959999415963
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-133",
+        "survey_no": "144/A",
+        "khatian_no": "KH-224",
+        "ulpin": "36-78431-133-2026",
+        "owner_name": "Kalyan Sharma",
+        "village": "Kothwalguda",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 11643.38,
+        "actual_area_sqm": 11643.38,
+        "land_use_claim": "Commercial",
+        "revenue_court_status": "Clean",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43491465214422,
+              17.257942630862456
+            ],
+            [
+              78.43590304008296,
+              17.2580866518756
+            ],
+            [
+              78.43602617283474,
+              17.2590258540485
+            ],
+            [
+              78.43497390541775,
+              17.258881549366475
+            ],
+            [
+              78.43491465214422,
+              17.257942630862456
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-134",
+        "survey_no": "145/A",
+        "khatian_no": "KH-225",
+        "ulpin": "36-78431-134-2026",
+        "owner_name": "Anand Goud",
+        "village": "Kothwalguda",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 9115.06,
+        "actual_area_sqm": 9115.06,
+        "land_use_claim": "Agricultural",
+        "revenue_court_status": "Clean",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43606674899092,
+              17.25804070798502
+            ],
+            [
+              78.43697233555314,
+              17.25809744661273
+            ],
+            [
+              78.43698079526354,
+              17.258851564621434
+            ],
+            [
+              78.43606342082701,
+              17.258909875750444
+            ],
+            [
+              78.43606674899092,
+              17.25804070798502
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-135",
+        "survey_no": "146/A",
+        "khatian_no": "KH-226",
+        "ulpin": "36-78431-135-2026",
+        "owner_name": "Suresh Sharma",
+        "village": "Kothwalguda",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 10374.3,
+        "actual_area_sqm": 10374.3,
+        "land_use_claim": "Agricultural",
+        "revenue_court_status": "Clean",
+        "is_anomalous": true,
+        "anomaly_type": "LAND_USE_MISMATCH"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43703267774299,
+              17.25808778600079
+            ],
+            [
+              78.43787685822288,
+              17.257923085734088
+            ],
+            [
+              78.43787140719554,
+              17.25896064472818
+            ],
+            [
+              78.43695446964246,
+              17.258970965965407
+            ],
+            [
+              78.43703267774299,
+              17.25808778600079
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-136",
+        "survey_no": "150/A",
+        "khatian_no": "KH-225",
+        "ulpin": "36-78431-136-2026",
+        "owner_name": "Prasad Kumar",
+        "village": "Kothwalguda",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 11197.06,
+        "actual_area_sqm": 11197.06,
+        "land_use_claim": "Commercial",
+        "revenue_court_status": "Mutation Pending",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43104352243742,
+              17.258940719462466
+            ],
+            [
+              78.43197684759178,
+              17.258952796780328
+            ],
+            [
+              78.43194770637044,
+              17.260031067298215
+            ],
+            [
+              78.43106922074266,
+              17.259868459693543
+            ],
+            [
+              78.43104352243742,
+              17.258940719462466
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-137",
+        "survey_no": "151/A",
+        "khatian_no": "KH-226",
+        "ulpin": "36-78431-137-2026",
+        "owner_name": "Sujatha Sharma",
+        "village": "Kothwalguda",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 10223.23,
+        "actual_area_sqm": 10223.23,
+        "land_use_claim": "Commercial",
+        "revenue_court_status": "Mutation Pending",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43198471515451,
+              17.258955336044796
+            ],
+            [
+              78.43285070913782,
+              17.259054223844604
+            ],
+            [
+              78.43297742267546,
+              17.25990239105249
+            ],
+            [
+              78.43204824618167,
+              17.259960336084227
+            ],
+            [
+              78.43198471515451,
+              17.258955336044796
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-138",
+        "survey_no": "152/A",
+        "khatian_no": "KH-227",
+        "ulpin": "36-78431-138-2026",
+        "owner_name": "Praveen Kumar",
+        "village": "Kothwalguda",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 10928.21,
+        "actual_area_sqm": 10928.21,
+        "land_use_claim": "Residential",
+        "revenue_court_status": "Clean",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43298553738379,
+              17.25890193393992
+            ],
+            [
+              78.433865048772,
+              17.25907662127866
+            ],
+            [
+              78.43403078571431,
+              17.25995911805784
+            ],
+            [
+              78.43306691900396,
+              17.259966501913297
+            ],
+            [
+              78.43298553738379,
+              17.25890193393992
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-139",
+        "survey_no": "153/A",
+        "khatian_no": "KH-228",
+        "ulpin": "36-78431-139-2026",
+        "owner_name": "Swapna Chary",
+        "village": "Kothwalguda",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 11022.02,
+        "actual_area_sqm": 11022.02,
+        "land_use_claim": "Residential",
+        "revenue_court_status": "Clean",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.4339296187571,
+              17.258925489103856
+            ],
+            [
+              78.43491165166999,
+              17.259079796297748
+            ],
+            [
+              78.43500922446098,
+              17.2600221405164
+            ],
+            [
+              78.4340797849273,
+              17.259892015307667
+            ],
+            [
+              78.4339296187571,
+              17.258925489103856
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-140",
+        "survey_no": "154/A",
+        "khatian_no": "KH-229",
+        "ulpin": "36-78431-140-2026",
+        "owner_name": "Anand Chary",
+        "village": "Kothwalguda",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 12776.82,
+        "actual_area_sqm": 12776.82,
+        "land_use_claim": "Agricultural",
+        "revenue_court_status": "Mutation Pending",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43494990594785,
+              17.258920558724334
+            ],
+            [
+              78.43600602324838,
+              17.25907682694029
+            ],
+            [
+              78.43593127547797,
+              17.25997413230203
+            ],
+            [
+              78.43493091066767,
+              17.260035976203138
+            ],
+            [
+              78.43494990594785,
+              17.258920558724334
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-141",
+        "survey_no": "155/A",
+        "khatian_no": "KH-230",
+        "ulpin": "36-78431-141-2026",
+        "owner_name": "Venkat Yadav",
+        "village": "Kothwalguda",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 10435.72,
+        "actual_area_sqm": 10435.72,
+        "land_use_claim": "Agricultural",
+        "revenue_court_status": "Clean",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43607292113924,
+              17.259095241206587
+            ],
+            [
+              78.43701215434399,
+              17.259076283240933
+            ],
+            [
+              78.43685495727237,
+              17.259997312894352
+            ],
+            [
+              78.43596643709358,
+              17.260036163177208
+            ],
+            [
+              78.43607292113924,
+              17.259095241206587
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-142",
+        "survey_no": "156/A",
+        "khatian_no": "KH-231",
+        "ulpin": "36-78431-142-2026",
+        "owner_name": "Prasad Naidu",
+        "village": "Kothwalguda",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 10847.52,
+        "actual_area_sqm": 10847.52,
+        "land_use_claim": "Agricultural",
+        "revenue_court_status": "Clean",
+        "is_anomalous": false,
+        "anomaly_type": "CLEAN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              78.43706044702779,
+              17.259072812805677
+            ],
+            [
+              78.43801214986331,
+              17.25895336114192
+            ],
+            [
+              78.43800747490182,
+              17.25987161912528
+            ],
+            [
+              78.43707443335659,
+              17.26002171865027
+            ],
+            [
+              78.43706044702779,
+              17.259072812805677
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

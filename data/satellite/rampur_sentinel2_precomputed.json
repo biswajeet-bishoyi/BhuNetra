@@ -1,0 +1,44 @@
+{
+  "village": "Mamidipally & Shamshabad",
+  "mandal": "Shamshabad",
+  "district": "Rangareddy",
+  "state": "Telangana",
+  "satellite_source": "Sentinel-2 L2A",
+  "acquisition_date": "2026-06-15",
+  "bands": [
+    "B02_Blue",
+    "B03_Green",
+    "B04_Red",
+    "B08_NIR"
+  ],
+  "ndvi_mean": 0.64,
+  "land_use_classified": {
+    "P-135": {
+      "claimed_use": "Agricultural",
+      "satellite_detected_use": "Commercial/Built-up",
+      "built_up_coverage_pct": 78.5,
+      "vegetation_ndvi": 0.12,
+      "confidence_score": 0.94,
+      "mismatch_flag": true,
+      "explanation": "High reflectance concrete structure detected (78.5% built-up surface area) conflicting with RoR Agricultural claim."
+    },
+    "P-101": {
+      "claimed_use": "Agricultural",
+      "satellite_detected_use": "Agricultural",
+      "built_up_coverage_pct": 2.1,
+      "vegetation_ndvi": 0.68,
+      "confidence_score": 0.98,
+      "mismatch_flag": false,
+      "explanation": "High NDVI (0.68) active crop canopy matches RoR Agricultural claim."
+    },
+    "P-112": {
+      "claimed_use": "Agricultural",
+      "satellite_detected_use": "Agricultural",
+      "built_up_coverage_pct": 5.0,
+      "vegetation_ndvi": 0.55,
+      "confidence_score": 0.92,
+      "mismatch_flag": false,
+      "explanation": "Vegetation index matches agricultural classification."
+    }
+  }
+}

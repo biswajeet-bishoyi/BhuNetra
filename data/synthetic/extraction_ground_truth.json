@@ -1,0 +1,361 @@
+{
+  "meta": {
+    "note": "Field-level extraction ground truth = the exact values PRINTED on each scan image, used to measure OCR/extraction accuracy. This is DISTINCT from the registry (parcels.geojson). Intentional scan-vs-registry disagreements are listed under 'registry_mismatch' and must be caught by the validation layer, NOT scored as OCR errors.",
+    "scored_fields": [
+      "survey_no",
+      "khatian_no",
+      "ulpin",
+      "owner_name",
+      "village",
+      "mandal",
+      "district",
+      "claimed_area_sqm",
+      "land_use_claim",
+      "deed_registration_no"
+    ]
+  },
+  "scans": {
+    "scan_P-101.png": {
+      "parcel_id": "P-101",
+      "style": "printed",
+      "handwritten": false,
+      "expected_low_confidence": false,
+      "fields": {
+        "survey_no": "100/A",
+        "khatian_no": "KH-200",
+        "ulpin": "36-78431-101-2026",
+        "owner_name": "Mahesh Kumar",
+        "father_or_husband": "Narsimha Kumar",
+        "village": "Shamshabad",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 11011.85,
+        "land_use_claim": "Agricultural",
+        "deed_registration_no": "TS-DHARANI-2026-P-101"
+      },
+      "registry_mismatch": {}
+    },
+    "scan_P-102.png": {
+      "parcel_id": "P-102",
+      "style": "printed",
+      "handwritten": false,
+      "expected_low_confidence": false,
+      "fields": {
+        "survey_no": "101/A",
+        "khatian_no": "KH-201",
+        "ulpin": "36-78431-102-2026",
+        "owner_name": "Mahesh Chary",
+        "father_or_husband": "Narsimha Chary",
+        "village": "Shamshabad",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 10374.51,
+        "land_use_claim": "Agricultural",
+        "deed_registration_no": "TS-DHARANI-2026-P-102"
+      },
+      "registry_mismatch": {}
+    },
+    "scan_P-103.png": {
+      "parcel_id": "P-103",
+      "style": "printed",
+      "handwritten": false,
+      "expected_low_confidence": false,
+      "fields": {
+        "survey_no": "102/A",
+        "khatian_no": "KH-202",
+        "ulpin": "36-78431-103-2026",
+        "owner_name": "Suresh Chary",
+        "father_or_husband": "Narsimha Chary",
+        "village": "Shamshabad",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 12689.95,
+        "land_use_claim": "Agricultural",
+        "deed_registration_no": "TS-DHARANI-2026-P-103"
+      },
+      "registry_mismatch": {}
+    },
+    "scan_P-105.png": {
+      "parcel_id": "P-105",
+      "style": "printed",
+      "handwritten": false,
+      "expected_low_confidence": false,
+      "fields": {
+        "survey_no": "104/A",
+        "khatian_no": "KH-204",
+        "ulpin": "36-78431-105-2026",
+        "owner_name": "Prasad Sharma",
+        "father_or_husband": "Narsimha Sharma",
+        "village": "Shamshabad",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 15075.63,
+        "land_use_claim": "Agricultural",
+        "deed_registration_no": "TS-DHARANI-2026-P-105"
+      },
+      "registry_mismatch": {}
+    },
+    "scan_P-108.png": {
+      "parcel_id": "P-108",
+      "style": "printed",
+      "handwritten": false,
+      "expected_low_confidence": false,
+      "fields": {
+        "survey_no": "110/A",
+        "khatian_no": "KH-205",
+        "ulpin": "36-78431-108-2026",
+        "owner_name": "Venkat Babu",
+        "father_or_husband": "Narsimha Babu",
+        "village": "Shamshabad",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 11940.02,
+        "land_use_claim": "Agricultural",
+        "deed_registration_no": "TS-DHARANI-2026-P-108"
+      },
+      "registry_mismatch": {}
+    },
+    "scan_P-112.png": {
+      "parcel_id": "P-112",
+      "style": "printed",
+      "handwritten": false,
+      "expected_low_confidence": false,
+      "fields": {
+        "survey_no": "114/A",
+        "khatian_no": "KH-209",
+        "ulpin": "36-78431-112-2026",
+        "owner_name": "Kalyan Sharma",
+        "father_or_husband": "Narsimha Sharma",
+        "village": "Shamshabad",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 19371.9,
+        "land_use_claim": "Agricultural",
+        "deed_registration_no": "TS-DHARANI-2026-P-112"
+      },
+      "registry_mismatch": {}
+    },
+    "scan_P-117.png": {
+      "parcel_id": "P-117",
+      "style": "printed",
+      "handwritten": false,
+      "expected_low_confidence": false,
+      "fields": {
+        "survey_no": "122/A",
+        "khatian_no": "KH-212",
+        "ulpin": "36-78431-117-2026",
+        "owner_name": "Ravi Kumar",
+        "father_or_husband": "Narsimha Kumar",
+        "village": "Mamidipally",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 12020.77,
+        "land_use_claim": "Commercial",
+        "deed_registration_no": "TS-DHARANI-2026-P-117"
+      },
+      "registry_mismatch": {
+        "owner_name": {
+          "printed_on_scan": "Ravi Kumar",
+          "registry_value": "Ravi Varma",
+          "note": "Deed name differs from digital registry — validation must flag."
+        }
+      }
+    },
+    "scan_P-118.png": {
+      "parcel_id": "P-118",
+      "style": "printed",
+      "handwritten": false,
+      "expected_low_confidence": false,
+      "fields": {
+        "survey_no": "123/A",
+        "khatian_no": "KH-213",
+        "ulpin": "36-78431-118-2026",
+        "owner_name": "Suresh Goud",
+        "father_or_husband": "Narsimha Goud",
+        "village": "Mamidipally",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 12853.76,
+        "land_use_claim": "Residential",
+        "deed_registration_no": "TS-DHARANI-2026-P-118"
+      },
+      "registry_mismatch": {}
+    },
+    "scan_P-124.png": {
+      "parcel_id": "P-124",
+      "style": "printed",
+      "handwritten": false,
+      "expected_low_confidence": false,
+      "fields": {
+        "survey_no": "132/A",
+        "khatian_no": "KH-217",
+        "ulpin": "36-78431-124-2026",
+        "owner_name": "Ananya Sharma",
+        "father_or_husband": "Narsimha Sharma",
+        "village": "Mamidipally",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 11559.06,
+        "land_use_claim": "Agricultural",
+        "deed_registration_no": "TS-DHARANI-2026-P-124"
+      },
+      "registry_mismatch": {}
+    },
+    "scan_P-130.png": {
+      "parcel_id": "P-130",
+      "style": "printed",
+      "handwritten": false,
+      "expected_low_confidence": false,
+      "fields": {
+        "survey_no": "141/A",
+        "khatian_no": "KH-221",
+        "ulpin": "36-78431-130-2026",
+        "owner_name": "Anand Varma",
+        "father_or_husband": "Narsimha Varma",
+        "village": "Mamidipally",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 17922.5,
+        "land_use_claim": "Agricultural",
+        "deed_registration_no": "TS-DHARANI-2026-P-130"
+      },
+      "registry_mismatch": {}
+    },
+    "scan_P-131.png": {
+      "parcel_id": "P-131",
+      "style": "printed",
+      "handwritten": false,
+      "expected_low_confidence": false,
+      "fields": {
+        "survey_no": "142/A",
+        "khatian_no": "KH-222",
+        "ulpin": "36-78431-131-2026",
+        "owner_name": "Suresh Reddy",
+        "father_or_husband": "Narsimha Reddy",
+        "village": "Kothwalguda",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 10762.75,
+        "land_use_claim": "Agricultural",
+        "deed_registration_no": "TS-DHARANI-2026-P-131"
+      },
+      "registry_mismatch": {}
+    },
+    "scan_P-132.png": {
+      "parcel_id": "P-132",
+      "style": "printed",
+      "handwritten": false,
+      "expected_low_confidence": false,
+      "fields": {
+        "survey_no": "143/A",
+        "khatian_no": "KH-223",
+        "ulpin": "36-78431-132-2026",
+        "owner_name": "Ravi Goud",
+        "father_or_husband": "Narsimha Goud",
+        "village": "Kothwalguda",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 10028.28,
+        "land_use_claim": "Agricultural",
+        "deed_registration_no": "TS-DHARANI-2026-P-132"
+      },
+      "registry_mismatch": {}
+    },
+    "scan_P-135.png": {
+      "parcel_id": "P-135",
+      "style": "printed",
+      "handwritten": false,
+      "expected_low_confidence": false,
+      "fields": {
+        "survey_no": "146/A",
+        "khatian_no": "KH-226",
+        "ulpin": "36-78431-135-2026",
+        "owner_name": "Suresh Sharma",
+        "father_or_husband": "Narsimha Sharma",
+        "village": "Kothwalguda",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 10374.3,
+        "land_use_claim": "Agricultural",
+        "deed_registration_no": "TS-DHARANI-2026-P-135"
+      },
+      "registry_mismatch": {}
+    },
+    "scan_P-140.png": {
+      "parcel_id": "P-140",
+      "style": "printed",
+      "handwritten": false,
+      "expected_low_confidence": false,
+      "fields": {
+        "survey_no": "154/A",
+        "khatian_no": "KH-229",
+        "ulpin": "36-78431-140-2026",
+        "owner_name": "Anand Chary",
+        "father_or_husband": "Narsimha Chary",
+        "village": "Kothwalguda",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 12776.82,
+        "land_use_claim": "Agricultural",
+        "deed_registration_no": "TS-DHARANI-2026-P-140"
+      },
+      "registry_mismatch": {}
+    },
+    "scan_P-106.png": {
+      "parcel_id": "P-106",
+      "style": "handwritten",
+      "handwritten": true,
+      "expected_low_confidence": true,
+      "fields": {
+        "survey_no": "105/A",
+        "khatian_no": "KH-205",
+        "ulpin": "36-78431-106-2026",
+        "owner_name": "Prasad Reddy",
+        "father_or_husband": "Narsimha Reddy",
+        "village": "Shamshabad",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 10750.02,
+        "land_use_claim": "Residential",
+        "deed_registration_no": "TS-DHARANI-2026-P-106"
+      },
+      "registry_mismatch": {}
+    },
+    "scan_P-125.png": {
+      "parcel_id": "P-125",
+      "style": "handwritten",
+      "handwritten": true,
+      "expected_low_confidence": true,
+      "fields": {
+        "survey_no": "133/A",
+        "khatian_no": "KH-218",
+        "ulpin": "36-78431-125-2026",
+        "owner_name": "Venkat Chary",
+        "father_or_husband": "Narsimha Chary",
+        "village": "Mamidipally",
+        "mandal": "Shamshabad",
+        "district": "Rangareddy",
+        "state": "Telangana",
+        "claimed_area_sqm": 9887.1,
+        "land_use_claim": "Commercial",
+        "deed_registration_no": "TS-DHARANI-2026-P-125"
+      },
+      "registry_mismatch": {}
+    }
+  }
+}

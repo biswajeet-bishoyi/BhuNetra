@@ -1,0 +1,71 @@
+parcel_id,owner_name,transfer_date,transfer_type,deed_number,price_inr,flag_rapid_resale
+P-101,Nagaraju Rao,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-101,2500000,False
+P-102,Ravi Varma,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-102,2500000,False
+P-102,Praveen Chary,2022-09-18,Registered Sale Deed,TS-DHARANI-2022-P-102,4200000,False
+P-103,Venkat Varma,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-103,2500000,False
+P-104,Nagaraju Kumar,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-104,2500000,False
+P-105,Ravi Varma,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-105,2500000,False
+P-106,Swapna Babu,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-106,2500000,False
+P-106,Kalyan Babu,2022-09-18,Registered Sale Deed,TS-DHARANI-2022-P-106,4200000,False
+P-107,Sujatha Kumar,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-107,2500000,False
+P-108,Venkat Reddy,2026-05-01,Pattadar Allotment,TS-DHARANI-2026-A1-P-108,5000000,False
+P-108,Srinivas Goud,2026-05-08,Registered Sale Deed,TS-DHARANI-2026-A2-P-108,6800000,True
+P-108,Praveen Rao,2026-05-15,Registered Sale Deed,TS-DHARANI-2026-A3-P-108,8200000,True
+P-108,Suresh Chary,2026-05-24,Registered Sale Deed,TS-DHARANI-2026-A4-P-108,9900000,True
+P-109,Prasad Yadav,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-109,2500000,False
+P-109,Mahesh Varma,2022-09-18,Registered Sale Deed,TS-DHARANI-2022-P-109,4200000,False
+P-110,Nagaraju Sharma,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-110,2500000,False
+P-110,Ravi Kumar,2022-09-18,Registered Sale Deed,TS-DHARANI-2022-P-110,4200000,False
+P-111,Ravi Yadav,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-111,2500000,False
+P-112,Kalyan Varma,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-112,2500000,False
+P-113,Suresh Varma,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-113,2500000,False
+P-113,Mahesh Kumar,2022-09-18,Registered Sale Deed,TS-DHARANI-2022-P-113,4200000,False
+P-114,Venkat Reddy,2026-05-01,Pattadar Allotment,TS-DHARANI-2026-A1-P-114,5000000,False
+P-114,Srinivas Goud,2026-05-08,Registered Sale Deed,TS-DHARANI-2026-A2-P-114,6800000,True
+P-114,Praveen Rao,2026-05-15,Registered Sale Deed,TS-DHARANI-2026-A3-P-114,8200000,True
+P-114,Suresh Chary,2026-05-24,Registered Sale Deed,TS-DHARANI-2026-A4-P-114,9900000,True
+P-115,Srinivas Babu,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-115,2500000,False
+P-115,Sujatha Babu,2022-09-18,Registered Sale Deed,TS-DHARANI-2022-P-115,4200000,False
+P-116,Kavitha Reddy,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-116,2500000,False
+P-117,Sujatha Goud,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-117,2500000,False
+P-117,Srinivas Reddy,2022-09-18,Registered Sale Deed,TS-DHARANI-2022-P-117,4200000,False
+P-118,Ananya Varma,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-118,2500000,False
+P-119,Anand Naidu,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-119,2500000,False
+P-120,Sujatha Yadav,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-120,2500000,False
+P-120,Mahesh Varma,2022-09-18,Registered Sale Deed,TS-DHARANI-2022-P-120,4200000,False
+P-121,Ananya Rao,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-121,2500000,False
+P-122,Venkat Reddy,2026-05-01,Pattadar Allotment,TS-DHARANI-2026-A1-P-122,5000000,False
+P-122,Srinivas Goud,2026-05-08,Registered Sale Deed,TS-DHARANI-2026-A2-P-122,6800000,True
+P-122,Praveen Rao,2026-05-15,Registered Sale Deed,TS-DHARANI-2026-A3-P-122,8200000,True
+P-122,Suresh Chary,2026-05-24,Registered Sale Deed,TS-DHARANI-2026-A4-P-122,9900000,True
+P-123,Praveen Sharma,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-123,2500000,False
+P-124,Prasad Chary,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-124,2500000,False
+P-124,Swapna Reddy,2022-09-18,Registered Sale Deed,TS-DHARANI-2022-P-124,4200000,False
+P-125,Swapna Reddy,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-125,2500000,False
+P-125,Ravi Reddy,2022-09-18,Registered Sale Deed,TS-DHARANI-2022-P-125,4200000,False
+P-126,Kavitha Goud,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-126,2500000,False
+P-127,Anand Rao,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-127,2500000,False
+P-127,Ravi Kumar,2022-09-18,Registered Sale Deed,TS-DHARANI-2022-P-127,4200000,False
+P-128,Praveen Yadav,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-128,2500000,False
+P-128,Srinivas Babu,2022-09-18,Registered Sale Deed,TS-DHARANI-2022-P-128,4200000,False
+P-129,Kavitha Rao,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-129,2500000,False
+P-129,Srinivas Yadav,2022-09-18,Registered Sale Deed,TS-DHARANI-2022-P-129,4200000,False
+P-130,Venkat Babu,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-130,2500000,False
+P-131,Ananya Babu,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-131,2500000,False
+P-131,Sujatha Varma,2022-09-18,Registered Sale Deed,TS-DHARANI-2022-P-131,4200000,False
+P-132,Praveen Chary,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-132,2500000,False
+P-133,Praveen Chary,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-133,2500000,False
+P-134,Swapna Yadav,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-134,2500000,False
+P-134,Kavitha Rao,2022-09-18,Registered Sale Deed,TS-DHARANI-2022-P-134,4200000,False
+P-135,Swapna Babu,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-135,2500000,False
+P-135,Prasad Sharma,2022-09-18,Registered Sale Deed,TS-DHARANI-2022-P-135,4200000,False
+P-136,Sujatha Naidu,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-136,2500000,False
+P-137,Suresh Naidu,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-137,2500000,False
+P-138,Sujatha Kumar,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-138,2500000,False
+P-139,Prasad Kumar,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-139,2500000,False
+P-139,Sujatha Goud,2022-09-18,Registered Sale Deed,TS-DHARANI-2022-P-139,4200000,False
+P-140,Praveen Sharma,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-140,2500000,False
+P-140,Ananya Babu,2022-09-18,Registered Sale Deed,TS-DHARANI-2022-P-140,4200000,False
+P-141,Swapna Sharma,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-141,2500000,False
+P-141,Anand Varma,2022-09-18,Registered Sale Deed,TS-DHARANI-2022-P-141,4200000,False
+P-142,Mahesh Babu,2016-04-12,Pattadar Passbook / Legacy RoR,DHARANI-2016-P-142,2500000,False

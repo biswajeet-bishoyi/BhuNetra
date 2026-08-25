@@ -1,0 +1,41 @@
+# BhuNetra AI — backend dependencies (SIH 2026 / SIH26018)
+#
+# Spatial processing is deliberately pure-Python (GeoPandas/Shapely). SQLite is a
+# plain relational store; no mod_spatialite / SpatiaLite C-extension is loaded.
+# PostGIS is the documented production-scale upgrade path.
+
+fastapi==0.136.0
+uvicorn==0.45.0
+python-multipart==0.0.27
+pydantic==2.13.3
+
+SQLAlchemy==2.0.49
+
+# Spatial (in-memory topology + STRtree indexing)
+geopandas==1.1.4
+shapely==2.1.2
+pandas
+numpy
+
+# Validation / anomaly model
+scikit-learn==1.9.0
+
+# Extraction engine transport (Ollama HTTP API) + image preprocessing
+httpx==0.28.1
+Pillow==12.1.1
+
+# Auth (Phase 9)
+passlib==1.7.4
+bcrypt==5.0.0
+python-jose==3.5.0
+
+# ---------------------------------------------------------------------------
+# NOT pip-installable — required for the REAL extraction engine:
+#   1. Install Ollama            -> https://ollama.com/download  (Windows native)
+#   2. Pull the vision model     -> ollama pull qwen2.5vl:3b     (~3.2 GB)
+# Ollama serves on http://localhost:11434 and handles GPU offload/quantization.
+# Override with env OLLAMA_HOST / OLLAMA_VISION_MODEL.
+#
+# Optional Telugu reading-assist for handwritten scans (heavy, torch-based):
+#   pip install surya-ocr
+# ---------------------------------------------------------------------------

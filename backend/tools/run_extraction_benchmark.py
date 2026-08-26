@@ -102,6 +102,8 @@ def main() -> int:
     by_style = {"printed": {"correct": 0, "total": 0}, "handwritten": {"correct": 0, "total": 0}}
     conf_buckets = {"high_confidence": {"correct": 0, "total": 0},
                     "flagged_for_review": {"correct": 0, "total": 0}}
+    corroboration = {f: {"read": 0, "correct": 0, "total": 0} for f in corroboration_fields}
+    checksum_tally = {"agreed": 0, "contradicted": 0, "not_run": 0}
     documents = []
     started = time.time()
 
@@ -154,10 +156,33 @@ def main() -> int:
 
         acc = 100.0 * doc["correct"] / doc["total"] if doc["total"] else 0.0
         doc["field_accuracy_pct"] = round(acc, 1)
+
+        # Corroboration fields are not scored, but whether they were READ decides
+        # whether the internal cross-checks had anything to work with.
+        for key in corroboration_fields:
+            got_field = result.fields.get(key, {})
+            got = got_field.get("value")
+            corroboration[key]["total"] += 1
+            if got is not None:
+                corroboration[key]["read"] += 1
+                if field_matches(key, got, entry["fields"].get(key)):
+                    corroboration[key]["correct"] += 1
+
+        sqm_checks = result.fields.get("claimed_area_sqm", {}).get("checks", {})
+        if "area_agrees_with_printed_acres" in sqm_checks.get("passed", []):
+            outcome = "agreed"
+        elif "area_contradicts_printed_acres" in sqm_checks.get("failed", []):
+            outcome = "contradicted"
+        else:
+            outcome = "not_run"
+        checksum_tally[outcome] += 1
+        doc["extent_checksum"] = outcome
+
         documents.append(doc)
         print(f"  {style:>11} {entry['parcel_id']:<7} "
               f"{doc['correct']:>2}/{doc['total']:<2} = {acc:5.1f}%   "
               f"conf={result.document_confidence:.2f}  {result.status:<12} {elapsed:5.1f}s"
+              f"  checksum={outcome}"
               + (f"  errors: {[e['field'] for e in doc['errors']]}" if doc["errors"] else ""))
 
     total_correct = sum(v["correct"] for v in per_field.values())
@@ -199,6 +224,12 @@ def main() -> int:
         },
         "per_field": {k: {"accuracy_pct": pct(v["correct"], v["total"]), **v}
                       for k, v in per_field.items()},
+        "corroboration_fields": {
+            k: {"read_rate_pct": pct(v["read"], v["total"]),
+                "accuracy_pct": pct(v["correct"], v["read"]), **v}
+            for k, v in corroboration.items()
+        },
+        "extent_checksum": checksum_tally,
         "documents": documents,
     }
 
@@ -215,6 +246,12 @@ def main() -> int:
     print(f"Review-flag recall    : {s['review_flag_recall_pct']}%  "
           f"({wrong_flagged}/{len(wrong)} wrong fields correctly routed to an officer)")
     print(f"Docs needing review   : {s['documents_needing_review']}")
+    for k, v in report["corroboration_fields"].items():
+        print(f"Cross-check input     : {k} read on {v['read']}/{v['total']} scans "
+              f"({v['read_rate_pct']}%), correct {v['accuracy_pct']}%")
+    print(f"Extent checksum       : agreed={checksum_tally['agreed']} "
+          f"contradicted={checksum_tally['contradicted']} "
+          f"not_run={checksum_tally['not_run']}")
     print(f"Report                -> {args.out}")
     return 0
 

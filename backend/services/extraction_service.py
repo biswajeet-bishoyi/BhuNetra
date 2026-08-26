@@ -131,16 +131,20 @@ LAND_USES = ("Agricultural", "Residential", "Commercial")
 
 FIELD_SPECS: Tuple[FieldSpec, ...] = (
     FieldSpec("deed_registration_no", "దస్తావేజు నమోదు సంఖ్య / Deed Registration No.",
-              "the deed registration number, e.g. TS-DHARANI-2026-P-105",
+              "the deed registration number, formatted TS-DHARANI-<year>-P-<parcel number>",
               pattern=r"^TS-DHARANI-\d{4}-P-\d{2,5}$"),
     FieldSpec("survey_no", "సర్వే నంబర్ / Survey No.",
-              "the survey / sub-division number, e.g. 104/A",
+              "the survey / sub-division number: one to four digits, a forward slash, "
+              "then a short sub-division code of one to three letters or digits",
               pattern=r"^\d{1,4}\s*/\s*[A-Za-z0-9]{1,3}$"),
     FieldSpec("khatian_no", "ఖాతా నంబర్ / Khatian No.",
-              "the khatian / passbook number, e.g. KH-204",
+              "the khatian / passbook number: the letters KH, a hyphen, then two to "
+              "five digits",
               pattern=r"^KH-\d{2,5}$"),
     FieldSpec("ulpin", "ULPIN / Unique Land Parcel ID",
-              "the ULPIN unique land parcel identification number, e.g. 36-78431-105-2026",
+              "the ULPIN unique land parcel identification number: four hyphen-separated "
+              "digit groups — two digits, then five digits, then the parcel number, then "
+              "a four-digit year",
               pattern=r"^\d{2}-\d{4,6}-\d{1,5}-\d{4}$"),
     FieldSpec("owner_name", "పట్టాదారు పేరు / Pattadar (Recorded Owner)",
               "the pattadar / recorded owner name in ENGLISH (Latin letters) only",
@@ -160,8 +164,8 @@ FIELD_SPECS: Tuple[FieldSpec, ...] = (
               "the recorded extent in square metres as a plain number (digits only, "
               "no units, no acres, no commas)", numeric=True),
     FieldSpec("area_acres_printed", "విస్తీర్ణం (ఎకరాలు) / Extent in acres",
-              "the extent in acres shown in brackets in the same extent cell, as a "
-              "plain number; empty if no acre figure is printed",
+              "the acre figure printed in brackets inside the same extent cell, "
+              "as a plain number",
               numeric=True, scored=False, optional=True),
     FieldSpec("land_use_claim", "భూ వర్గీకరణ / Land Classification",
               "the land classification in ENGLISH", master_list=LAND_USES),
@@ -210,6 +214,20 @@ def _build_prompt() -> str:
         "  4. confidence is your own certainty for THAT field, from 0.0 to 1.0. Handwriting, "
         "     blur, smudges, ink over printed lines and skew should all lower it.",
         "  5. source_text is the short verbatim text you read that field from.",
+        "  6. The location block prints village, mandal, district and state as FOUR "
+        "     separate consecutive rows. Adjacent rows often repeat the same name: a "
+        "     village and the mandal containing it are frequently called the same "
+        "     thing. Read each row against its OWN label and repeat the value if that "
+        "     is what the page says. Never skip a row because it duplicates the row "
+        "     above or below it, and never copy a neighbouring row's value into a "
+        "     field you could not read.",
+        "  7. The extent cell prints the same area twice: the square-metre figure, "
+        "     then its acre equivalent in brackets before the Telugu word ఎకరాలు. Put "
+        "     the square-metre number in claimed_area_sqm and the bracketed acre "
+        "     number in area_acres_printed. Both are values to report, not context.",
+        "  8. Every number must be read off THIS page. The field descriptions above "
+        "     describe formats, not answers — never carry a digit from a description "
+        "     into your output.",
         "",
         "Respond with JSON only.",
     ]
@@ -567,6 +585,45 @@ def _check_cross_field(fields: Dict[str, Dict[str, Any]]) -> None:
                 f["checks"]["failed"].append(f"cross_field_inconsistent_with_{b_key if key == a_key else a_key}")
 
     _check_area_redundancy(fields)
+    _check_identifier_agreement(fields)
+
+
+def _check_identifier_agreement(fields: Dict[str, Dict[str, Any]]) -> None:
+    """Cross-check the parcel number that appears in two identifiers on the page.
+
+    The deed registration number ends in the parcel number (TS-DHARANI-2026-P-106)
+    and the ULPIN's third segment carries the same number (36-78431-106-2026). A
+    single-digit misread in either is format-valid on its own — observed live, a
+    ULPIN read as ...-105-... on P-106's deed, which every per-field check accepts
+    because it is a perfectly well-formed ULPIN. Only comparing the two catches it.
+
+    Neither field is treated as the authority: the disagreement itself is the
+    finding, so both are flagged for the officer to resolve against the page.
+    """
+    deed_f, ulpin_f = fields.get("deed_registration_no"), fields.get("ulpin")
+    if not deed_f or not ulpin_f or deed_f["value"] is None or ulpin_f["value"] is None:
+        return
+
+    deed_m = re.search(r"P-(\d{2,5})$", str(deed_f["value"]))
+    ulpin_parts = str(ulpin_f["value"]).split("-")
+    if not deed_m or len(ulpin_parts) != 4:
+        return                              # malformed; the format checks own that
+
+    if int(deed_m.group(1)) == int(ulpin_parts[2]):
+        for f in (deed_f, ulpin_f):
+            f["checks"]["passed"].append("parcel_no_agrees_across_identifiers")
+        return
+
+    for f in (deed_f, ulpin_f):
+        f["confidence"] = round(min(f["confidence"], FORMAT_FAIL_CAP), 3)
+        f["needs_review"] = True
+        f["checks"]["failed"].append("parcel_no_disagrees_across_identifiers")
+    ulpin_f["identifier_cross_check"] = {
+        "deed_parcel_no": deed_m.group(1),
+        "ulpin_parcel_no": ulpin_parts[2],
+        "note": ("The deed registration number and the ULPIN name different parcels. "
+                 "One of the two was misread; confirm both against the scan."),
+    }
 
 
 SQM_PER_ACRE = 4046.86
@@ -605,6 +662,13 @@ def _check_area_redundancy(fields: Dict[str, Dict[str, Any]]) -> None:
     sqm_f["confidence"] = round(min(sqm_f["confidence"], FORMAT_FAIL_CAP), 3)
     sqm_f["needs_review"] = True
     sqm_f["checks"]["failed"].append("area_contradicts_printed_acres")
+    # The disagreement does not say WHICH of the two was misread — measured live, the
+    # acre figure is the weaker read. Flag both so the officer is pointed at the pair
+    # rather than at the square-metre value alone, which may well be the correct one.
+    acre_f["confidence"] = round(min(acre_f["confidence"], FORMAT_FAIL_CAP), 3)
+    acre_f["needs_review"] = True
+    acre_f["not_printed"] = False
+    acre_f["checks"]["failed"].append("area_contradicts_printed_acres")
     sqm_f["area_cross_check"] = {
         "extracted_sqm": sqm,
         "printed_acres": acres,

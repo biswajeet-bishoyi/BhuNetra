@@ -340,6 +340,53 @@ def test_no_filename_lookup() -> None:
         del seen_names
 
 
+def test_prompt_leaks_no_answers() -> None:
+    """The prompt must not contain any value the model could copy instead of reading.
+
+    This was not hypothetical. Earlier prompt revisions carried concrete examples
+    ("e.g. 36-78431-105-2026", "(2.72 ఎకరాలు)"), and the benchmark then showed the
+    model returning those exact strings for scans where they were wrong — P-106's
+    ULPIN came back as the example verbatim, and eight scans returned the example
+    acre figure. Every one of those looked like an OCR error in the report; all of
+    them were the prompt answering for the page.
+
+    So: no distinctive value from the ground truth may appear in the prompt.
+    """
+    print("\n[14] The prompt cannot answer for the page")
+    prompt = ex.PROMPT
+    check("prompt is non-trivial", len(prompt) > 500)
+
+    if not GT_PATH.exists():
+        check("ground truth present for leak check", False, str(GT_PATH))
+        return
+    gt = json.loads(GT_PATH.read_text(encoding="utf-8"))
+
+    leaks: list[str] = []
+    for fname, entry in gt["scans"].items():
+        for key, val in entry["fields"].items():
+            text = str(val)
+            # Master-data names legitimately appear as vocabulary in the location
+            # rule; short tokens are not copyable answers. Everything else is.
+            if len(text) < 4 or key in {"village", "mandal", "district", "state",
+                                        "land_use_claim"}:
+                continue
+            if text in prompt:
+                leaks.append(f"{fname}:{key}={text}")
+    check("no ground-truth value appears anywhere in the prompt",
+          not leaks, "; ".join(sorted(set(leaks))[:5]))
+
+    # Digit sequences are the specific hazard: a format template is fine, a real
+    # value is not. A land-record value always has either a 3+ digit run (areas,
+    # khatian, survey) or digits joined by - and / (ULPIN, deed no, survey no).
+    # The confidence scale ("0.0 to 1.0") has neither, so it is not a false hit.
+    import re as _re
+    runs = _re.findall(r"\d{3,}|\d[\d.]*[-/]\d[\d.]*", prompt)
+    check("prompt contains no land-record value to copy", not runs, str(runs[:5]))
+
+    check("the prompt explicitly disclaims that descriptions are answers",
+          "not answers" in prompt, "the no-carry-over rule is missing")
+
+
 def test_acre_unit_handling() -> None:
     print("\n[11] Extent unit handling")
     spec = ex.FIELD_BY_KEY["claimed_area_sqm"]
@@ -430,6 +477,30 @@ def test_joint_checks() -> None:
           ex.AREA_REDUNDANCY_TOLERANCE_PCT < 1.5,
           str(ex.AREA_REDUNDANCY_TOLERANCE_PCT))
 
+    # (d) Identifier agreement. The live P-106 failure: a well-formed ULPIN naming
+    # parcel 105 on parcel 106's deed. Format checks pass it; only the deed number
+    # printed on the same page contradicts it.
+    res_ok_id = ex._assemble(model_output(CLEAN), {}, pass_count=1)
+    check("agreeing deed number and ULPIN corroborate each other",
+          "parcel_no_agrees_across_identifiers"
+          in res_ok_id.fields["ulpin"]["checks"]["passed"],
+          str(res_ok_id.fields["ulpin"]["checks"]))
+
+    off_by_one = dict(CLEAN, ulpin="36-78431-106-2026")   # deed says P-105
+    res_id = ex._assemble(model_output(off_by_one, confidence=1.0), {}, pass_count=1)
+    check("a well-formed ULPIN naming the wrong parcel is caught",
+          res_id.fields["ulpin"]["needs_review"]
+          and res_id.fields["deed_registration_no"]["needs_review"],
+          str(res_id.fields["ulpin"]["confidence"]))
+    check("neither identifier is silently treated as the authority",
+          res_id.fields["ulpin"]["identifier_cross_check"]["deed_parcel_no"] == "105"
+          and res_id.fields["ulpin"]["identifier_cross_check"]["ulpin_parcel_no"] == "106",
+          str(res_id.fields["ulpin"].get("identifier_cross_check")))
+    check("a malformed identifier is left to the format check, not double-reported",
+          "parcel_no_disagrees_across_identifiers" not in
+          ex._assemble(model_output(dict(CLEAN, ulpin="garbage")), {}, pass_count=1)
+            .fields["ulpin"]["checks"]["failed"])
+
 
 def test_optional_fields() -> None:
     """A field that simply is not printed on a form is not a defect.
@@ -486,6 +557,7 @@ if __name__ == "__main__":
     test_auto_escalation()
     test_ground_truth_conformance()
     test_no_filename_lookup()
+    test_prompt_leaks_no_answers()
     test_acre_unit_handling()
     test_joint_checks()
     test_optional_fields()

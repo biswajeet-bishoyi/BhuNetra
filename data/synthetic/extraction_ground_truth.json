@@ -12,6 +12,9 @@
       "claimed_area_sqm",
       "land_use_claim",
       "deed_registration_no"
+    ],
+    "corroboration_fields": [
+      "area_acres_printed"
     ]
   },
   "scans": {
@@ -31,6 +34,7 @@
         "district": "Rangareddy",
         "state": "Telangana",
         "claimed_area_sqm": 11011.85,
+        "area_acres_printed": 2.72,
         "land_use_claim": "Agricultural",
         "deed_registration_no": "TS-DHARANI-2026-P-101"
       },
@@ -52,6 +56,7 @@
         "district": "Rangareddy",
         "state": "Telangana",
         "claimed_area_sqm": 10374.51,
+        "area_acres_printed": 2.56,
         "land_use_claim": "Agricultural",
         "deed_registration_no": "TS-DHARANI-2026-P-102"
       },
@@ -73,6 +78,7 @@
         "district": "Rangareddy",
         "state": "Telangana",
         "claimed_area_sqm": 12689.95,
+        "area_acres_printed": 3.14,
         "land_use_claim": "Agricultural",
         "deed_registration_no": "TS-DHARANI-2026-P-103"
       },
@@ -94,6 +100,7 @@
         "district": "Rangareddy",
         "state": "Telangana",
         "claimed_area_sqm": 15075.63,
+        "area_acres_printed": 3.73,
         "land_use_claim": "Agricultural",
         "deed_registration_no": "TS-DHARANI-2026-P-105"
       },
@@ -115,6 +122,7 @@
         "district": "Rangareddy",
         "state": "Telangana",
         "claimed_area_sqm": 11940.02,
+        "area_acres_printed": 2.95,
         "land_use_claim": "Agricultural",
         "deed_registration_no": "TS-DHARANI-2026-P-108"
       },
@@ -136,6 +144,7 @@
         "district": "Rangareddy",
         "state": "Telangana",
         "claimed_area_sqm": 19371.9,
+        "area_acres_printed": 4.79,
         "land_use_claim": "Agricultural",
         "deed_registration_no": "TS-DHARANI-2026-P-112"
       },
@@ -157,6 +166,7 @@
         "district": "Rangareddy",
         "state": "Telangana",
         "claimed_area_sqm": 12020.77,
+        "area_acres_printed": 2.97,
         "land_use_claim": "Commercial",
         "deed_registration_no": "TS-DHARANI-2026-P-117"
       },
@@ -184,6 +194,7 @@
         "district": "Rangareddy",
         "state": "Telangana",
         "claimed_area_sqm": 12853.76,
+        "area_acres_printed": 3.18,
         "land_use_claim": "Residential",
         "deed_registration_no": "TS-DHARANI-2026-P-118"
       },
@@ -205,6 +216,7 @@
         "district": "Rangareddy",
         "state": "Telangana",
         "claimed_area_sqm": 11559.06,
+        "area_acres_printed": 2.86,
         "land_use_claim": "Agricultural",
         "deed_registration_no": "TS-DHARANI-2026-P-124"
       },
@@ -226,6 +238,7 @@
         "district": "Rangareddy",
         "state": "Telangana",
         "claimed_area_sqm": 17922.5,
+        "area_acres_printed": 4.43,
         "land_use_claim": "Agricultural",
         "deed_registration_no": "TS-DHARANI-2026-P-130"
       },
@@ -247,6 +260,7 @@
         "district": "Rangareddy",
         "state": "Telangana",
         "claimed_area_sqm": 10762.75,
+        "area_acres_printed": 2.66,
         "land_use_claim": "Agricultural",
         "deed_registration_no": "TS-DHARANI-2026-P-131"
       },
@@ -268,6 +282,7 @@
         "district": "Rangareddy",
         "state": "Telangana",
         "claimed_area_sqm": 10028.28,
+        "area_acres_printed": 2.48,
         "land_use_claim": "Agricultural",
         "deed_registration_no": "TS-DHARANI-2026-P-132"
       },
@@ -289,6 +304,7 @@
         "district": "Rangareddy",
         "state": "Telangana",
         "claimed_area_sqm": 10374.3,
+        "area_acres_printed": 2.56,
         "land_use_claim": "Agricultural",
         "deed_registration_no": "TS-DHARANI-2026-P-135"
       },
@@ -310,6 +326,7 @@
         "district": "Rangareddy",
         "state": "Telangana",
         "claimed_area_sqm": 12776.82,
+        "area_acres_printed": 3.16,
         "land_use_claim": "Agricultural",
         "deed_registration_no": "TS-DHARANI-2026-P-140"
       },
@@ -331,6 +348,7 @@
         "district": "Rangareddy",
         "state": "Telangana",
         "claimed_area_sqm": 10750.02,
+        "area_acres_printed": 2.66,
         "land_use_claim": "Residential",
         "deed_registration_no": "TS-DHARANI-2026-P-106"
       },
@@ -352,6 +370,7 @@
         "district": "Rangareddy",
         "state": "Telangana",
         "claimed_area_sqm": 9887.1,
+        "area_acres_printed": 2.44,
         "land_use_claim": "Commercial",
         "deed_registration_no": "TS-DHARANI-2026-P-125"
       },

@@ -282,6 +282,11 @@ def generate_scans():
                 "mandal", "district", "claimed_area_sqm", "land_use_claim",
                 "deed_registration_no",
             ],
+            # Printed on the page and extracted, but deliberately NOT scored: the
+            # acre figure exists to cross-check the square-metre extent (the RoR
+            # prints the same quantity twice). Scoring it would double-count the
+            # extent; its value is as a checksum, so it is tracked separately.
+            "corroboration_fields": ["area_acres_printed"],
         },
         "scans": {},
     }
@@ -313,6 +318,9 @@ def generate_scans():
                 "district": "Rangareddy",
                 "state": "Telangana",
                 "claimed_area_sqm": rec["claimed_area_sqm"],
+                # Same figure the extent cell prints in brackets. Recorded so the
+                # extraction benchmark can verify the checksum input is being read.
+                "area_acres_printed": acres_from_sqm(rec["claimed_area_sqm"]),
                 "land_use_claim": rec["land_use_claim"],
                 "deed_registration_no": f"TS-DHARANI-2026-{pid}",
             },

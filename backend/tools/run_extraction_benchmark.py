@@ -83,6 +83,10 @@ def main() -> int:
 
     gt = json.loads(GT_PATH.read_text(encoding="utf-8"))
     scored_fields = gt["meta"]["scored_fields"]
+    # Printed and extracted but not scored: these feed the internal cross-checks.
+    # Tracked separately because a checksum whose input is never read is a check
+    # that silently always passes.
+    corroboration_fields = gt["meta"].get("corroboration_fields", [])
     scans = gt["scans"]
     if args.only:
         wanted = {p.upper() for p in args.only}

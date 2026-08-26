@@ -51,13 +51,14 @@ from dataclasses import dataclass, field as dc_field
 from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps, ImageFilter
 
 # --- Configuration (env-overridable; no magic numbers scattered in code) -----
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434").rstrip("/")
 VISION_MODEL = os.getenv("OLLAMA_VISION_MODEL", "qwen2.5vl:3b")
 
 MAX_EDGE = int(os.getenv("EXTRACTION_MAX_EDGE", "1280"))       # VRAM guardrail
+MIN_VISION_PIXELS = int(os.getenv("EXTRACTION_MIN_PIXELS", "802816"))  # model's vision floor
 REQUEST_TIMEOUT = float(os.getenv("EXTRACTION_TIMEOUT", "300"))  # cold start is slow
 KEEP_ALIVE = os.getenv("OLLAMA_KEEP_ALIVE", "15m")             # keep weights resident
 
@@ -75,6 +76,43 @@ class ExtractionUnavailable(RuntimeError):
     """Raised when the local extraction engine cannot be reached or the model is missing."""
 
 
+class VisionEncoderCorruption(RuntimeError):
+    """The runner returned a degenerate stream instead of an answer.
+
+    Observed with qwen2.5vl:3b on scans carrying heavy per-pixel grain: the server
+    logs a normal image decode, then streams a repeated single character and never
+    sets `done`. It is deterministic per image, and it poisons the loaded runner —
+    the *next* request for a healthy image fails the same way until the model is
+    unloaded. Both facts are handled in `_call_ollama`.
+    """
+
+
+def _looks_corrupted(text: str) -> bool:
+    """Detect a degenerate token stream (e.g. '@@@@@@@…') vs a real answer."""
+    stripped = text.strip()
+    if len(stripped) < 8:
+        return False
+    # A single repeated non-alphanumeric character, or almost no distinct characters
+    # across a long span, means the decoder collapsed rather than answered.
+    distinct = set(stripped)
+    if len(distinct) == 1 and not stripped[0].isalnum():
+        return True
+    return len(distinct) <= 2 and len(stripped) >= 24 and not any(c.isalnum() for c in stripped)
+
+
+def _unload_model() -> None:
+    """Evict the model so the next request gets a clean runner.
+
+    Necessary because a corrupted vision pass persists in the loaded runner and
+    would otherwise corrupt unrelated documents processed after it.
+    """
+    try:
+        httpx.post(f"{OLLAMA_HOST}/api/generate",
+                   json={"model": VISION_MODEL, "keep_alive": 0}, timeout=30.0)
+    except httpx.HTTPError:
+        pass  # best-effort; the caller still surfaces the failure
+
+
 # --- Dharani / RoR field specification --------------------------------------
 @dataclass(frozen=True)
 class FieldSpec:
@@ -85,6 +123,7 @@ class FieldSpec:
     master_list: Tuple[str, ...] = ()
     numeric: bool = False
     scored: bool = True              # counted in extraction-accuracy benchmarking
+    optional: bool = False           # absence is normal, not a reason to demand review
 
 
 VILLAGES = ("Shamshabad", "Mamidipally", "Kothwalguda")
@@ -120,6 +159,10 @@ FIELD_SPECS: Tuple[FieldSpec, ...] = (
     FieldSpec("claimed_area_sqm", "విస్తీర్ణం / Recorded Extent",
               "the recorded extent in square metres as a plain number (digits only, "
               "no units, no acres, no commas)", numeric=True),
+    FieldSpec("area_acres_printed", "విస్తీర్ణం (ఎకరాలు) / Extent in acres",
+              "the extent in acres shown in brackets in the same extent cell, as a "
+              "plain number; empty if no acre figure is printed",
+              numeric=True, scored=False, optional=True),
     FieldSpec("land_use_claim", "భూ వర్గీకరణ / Land Classification",
               "the land classification in ENGLISH", master_list=LAND_USES),
 )
@@ -177,11 +220,24 @@ PROMPT = _build_prompt()
 
 
 # --- Image preprocessing -----------------------------------------------------
-def preprocess_image(raw: bytes) -> Tuple[str, Dict[str, Any]]:
+def _encode_png(img: Image.Image) -> str:
+    buf = io.BytesIO()
+    img.save(buf, format="PNG", optimize=True)
+    return base64.b64encode(buf.getvalue()).decode("ascii")
+
+
+def preprocess_image(raw: bytes, denoise: bool = False) -> Tuple[str, Dict[str, Any]]:
     """Normalize an uploaded scan and return (base64 PNG, metadata).
 
     Downscaling to MAX_EDGE keeps the vision tower inside 6 GB of VRAM; EXIF
     transpose fixes phone-camera captures that are rotated by metadata only.
+
+    `denoise` applies a 3x3 median filter. Heavy per-pixel sensor grain — the kind
+    a real flatbed produces on an old, creased record — can destabilise the vision
+    encoder into emitting a degenerate token stream (see `_looks_corrupted`). A
+    median filter suppresses that grain while preserving glyph edges, which is what
+    production scanner pipelines do before OCR anyway. It is applied on retry
+    rather than always, so clean pages are never softened unnecessarily.
     """
     try:
         img = Image.open(io.BytesIO(raw))
@@ -197,12 +253,25 @@ def preprocess_image(raw: bytes) -> Tuple[str, Dict[str, Any]]:
         scale = MAX_EDGE / longest
         img = img.resize((max(1, int(img.width * scale)), max(1, int(img.height * scale))),
                          Image.LANCZOS)
-    meta["submitted_size"] = list(img.size)
 
-    buf = io.BytesIO()
-    img.save(buf, format="PNG", optimize=True)
-    meta["submitted_bytes"] = buf.tell()
-    return base64.b64encode(buf.getvalue()).decode("ascii"), meta
+    # The vision tower has a minimum pixel budget and upscales anything below it
+    # internally. Doing it here with a good resampler beats letting the runner do
+    # it, and keeps small phone crops legible.
+    if img.width * img.height < MIN_VISION_PIXELS:
+        factor = (MIN_VISION_PIXELS / (img.width * img.height)) ** 0.5
+        target = (min(MAX_EDGE, max(1, int(img.width * factor))),
+                  min(MAX_EDGE, max(1, int(img.height * factor))))
+        img = img.resize(target, Image.LANCZOS)
+        meta["upscaled_to_vision_minimum"] = True
+
+    if denoise:
+        img = img.filter(ImageFilter.MedianFilter(3))
+        meta["denoised"] = True
+
+    meta["submitted_size"] = list(img.size)
+    b64 = _encode_png(img)
+    meta["submitted_bytes"] = len(b64) * 3 // 4
+    return b64, meta
 
 
 # --- Ollama transport --------------------------------------------------------
@@ -279,6 +348,16 @@ def _call_ollama(image_b64: str, temperature: float, seed: int) -> Dict[str, Any
 
     body = resp.json()
     text = (body.get("response") or "").strip()
+
+    # A collapsed vision pass returns either nothing or a repeated character, with
+    # `done` unset. Signal it distinctly so the caller can denoise and retry.
+    if _looks_corrupted(text) or (not text and not body.get("done")):
+        _unload_model()
+        raise VisionEncoderCorruption(
+            f"Vision encoder returned a degenerate stream for this image "
+            f"(done={body.get('done')}, {len(text)} chars). Runner unloaded."
+        )
+
     parsed = _parse_json_object(text)
     if parsed is None:
         raise ExtractionUnavailable(
@@ -434,6 +513,106 @@ def _agreement_key(value: Any) -> str:
     return re.sub(r"[^a-z0-9]", "", str(value).casefold())
 
 
+# Fields whose values are drawn from overlapping vocabularies, so a row-transposed
+# read yields a value that is individually valid and passes every per-field check.
+_TRANSPOSABLE_PAIRS = (("village", "mandal"), ("mandal", "district"), ("village", "district"))
+
+
+def _belongs_to(value: str, master: Tuple[str, ...]) -> bool:
+    """True if `value` is a member of `master`, allowing for OCR-level misspelling.
+
+    Used only to decide *which row a value came from*, never to rewrite it. A
+    misread row label is still a misread; this just tells us it landed in the
+    wrong field rather than being an unknown place name.
+    """
+    if not value or not master:
+        return False
+    _, corrected = _reconcile_master(value, master)
+    return corrected or any(value.casefold() == m.casefold() for m in master)
+
+
+def _check_cross_field(fields: Dict[str, Dict[str, Any]]) -> None:
+    """Flag administrative-hierarchy reads that are individually valid but jointly wrong.
+
+    The RoR prints village / mandal / district in adjacent rows and their vocabularies
+    overlap ("Shamshabad" is both a village and the mandal). A model that slips one row
+    produces a value that passes format and master-data checks on its own, so only a
+    joint check catches it. Observed live: a mandal read of "Mamidipally" alongside a
+    village read of "Shamshabad" — the two rows swapped.
+
+    Mutates confidence in place and records the reason, so the officer sees which
+    pair is inconsistent rather than an unexplained amber field.
+    """
+    for a_key, b_key in _TRANSPOSABLE_PAIRS:
+        fa, fb = fields.get(a_key), fields.get(b_key)
+        if not fa or not fb or fa["value"] is None or fb["value"] is None:
+            continue
+
+        spec_a, spec_b = FIELD_BY_KEY[a_key], FIELD_BY_KEY[b_key]
+        a_val, b_val = str(fa["value"]), str(fb["value"])
+
+        # A value that belongs to the *other* field's master list but not its own is
+        # the signature of a transposed row. The comparison has to be fuzzy on both
+        # sides: observed live, a swapped mandal row read "Kothalguda" for the
+        # village "Kothwalguda", and exact membership would have let it through.
+        a_misplaced = _belongs_to(a_val, spec_b.master_list) \
+            and not _belongs_to(a_val, spec_a.master_list)
+        b_misplaced = _belongs_to(b_val, spec_a.master_list) \
+            and not _belongs_to(b_val, spec_b.master_list)
+
+        if a_misplaced or b_misplaced:
+            for f, key in ((fa, a_key), (fb, b_key)):
+                f["confidence"] = round(min(f["confidence"], FORMAT_FAIL_CAP), 3)
+                f["needs_review"] = True
+                f["checks"]["failed"].append(f"cross_field_inconsistent_with_{b_key if key == a_key else a_key}")
+
+    _check_area_redundancy(fields)
+
+
+SQM_PER_ACRE = 4046.86
+# The printed acre figure is rounded to 2 decimals, so it pins the square-metre value
+# to about +/-0.35% at typical parcel sizes (half of 0.01 acre over ~2-4 acres). A 0.6%
+# band absorbs that rounding plus a stray digit of OCR jitter, while still catching a
+# single-digit transposition (which moves the value by >1%). Measured: a real
+# 12020.77 -> 12200.77 misread deviates 1.51% and is caught; a correct read is 0.013%.
+AREA_REDUNDANCY_TOLERANCE_PCT = 0.6
+
+
+def _check_area_redundancy(fields: Dict[str, Dict[str, Any]]) -> None:
+    """Verify the extent against the acre figure printed beside it.
+
+    The RoR extent cell prints the same quantity twice ("12020.77 sq.m (2.97 ఎకరాలు)").
+    That redundancy is a free checksum: a digit transposition in the square-metre
+    read will not agree with the acre figure. Without it, a misread like
+    12020.77 -> 12200.77 is arithmetically plausible and sails through at full
+    confidence, which is the most dangerous failure mode in a land record.
+
+    The acre field is not scored for accuracy — it exists solely as this check.
+    """
+    sqm_f, acre_f = fields.get("claimed_area_sqm"), fields.get("area_acres_printed")
+    if not sqm_f or not acre_f:
+        return
+    sqm, acres = sqm_f["value"], acre_f["value"]
+    if not isinstance(sqm, (int, float)) or not isinstance(acres, (int, float)) or acres <= 0:
+        return
+
+    implied = acres * SQM_PER_ACRE
+    delta_pct = abs(sqm - implied) / implied * 100.0
+    if delta_pct <= AREA_REDUNDANCY_TOLERANCE_PCT:
+        sqm_f["checks"]["passed"].append("area_agrees_with_printed_acres")
+        return
+
+    sqm_f["confidence"] = round(min(sqm_f["confidence"], FORMAT_FAIL_CAP), 3)
+    sqm_f["needs_review"] = True
+    sqm_f["checks"]["failed"].append("area_contradicts_printed_acres")
+    sqm_f["area_cross_check"] = {
+        "extracted_sqm": sqm,
+        "printed_acres": acres,
+        "sqm_implied_by_acres": round(implied, 2),
+        "deviation_pct": round(delta_pct, 2),
+    }
+
+
 # --- Public API --------------------------------------------------------------
 @dataclass
 class ExtractionResult:
@@ -474,10 +653,28 @@ def extract_document(raw_bytes: bytes, passes: str | int = "auto") -> Extraction
     passes: 1 -> single pass (fast, stage demo)
             2 -> always cross-check with a second independent pass
             "auto" -> second pass only if pass 1 produced any low-confidence field
+
+    Heavy scanner grain can collapse the vision encoder (see VisionEncoderCorruption).
+    When that happens the page is re-submitted once through a median-filter denoise,
+    which resolves it for every affected scan in our corpus. The recovery is recorded
+    in `image_meta` so the officer UI can show that the page needed cleanup.
     """
     image_b64, image_meta = preprocess_image(raw_bytes)
 
-    first = _call_ollama(image_b64, temperature=0.0, seed=7)
+    try:
+        first = _call_ollama(image_b64, temperature=0.0, seed=7)
+    except VisionEncoderCorruption:
+        image_b64, image_meta = preprocess_image(raw_bytes, denoise=True)
+        image_meta["recovered_from_vision_corruption"] = True
+        try:
+            first = _call_ollama(image_b64, temperature=0.0, seed=7)
+        except VisionEncoderCorruption as exc:
+            raise ExtractionUnavailable(
+                "This scan could not be read by the extraction engine even after "
+                f"noise reduction ({exc}). Re-scan the page at a higher quality "
+                "setting, or enter the fields manually via officer review."
+            ) from exc
+
     result = _assemble(first, image_meta, pass_count=1)
     result.timing_ms = first.get("_timing", {}).get("total_duration_ms", 0.0)
 
@@ -485,7 +682,15 @@ def extract_document(raw_bytes: bytes, passes: str | int = "auto") -> Extraction
     if not wants_second:
         return result
 
-    second = _call_ollama(image_b64, temperature=0.35, seed=101)
+    try:
+        second = _call_ollama(image_b64, temperature=0.35, seed=101)
+    except VisionEncoderCorruption:
+        # The cross-check is an enhancement; losing it must not lose pass 1. Mark the
+        # document for review since we could not corroborate the reading.
+        result.image_meta["cross_check_unavailable"] = True
+        result.status = "NEEDS_REVIEW"
+        return result
+
     return _merge_passes(first, second, image_meta,
                          first_ms=result.timing_ms,
                          second_ms=second.get("_timing", {}).get("total_duration_ms", 0.0))
@@ -504,10 +709,15 @@ def _assemble(model_out: Dict[str, Any], image_meta: Dict[str, Any],
                      "confidence": DEFAULT_MODEL_CONFIDENCE, "source_text": ""}
         value, passed, failed = _normalize_field(spec, entry.get("value"))
         conf = _calibrate(entry.get("confidence"), passed, failed)
+        # An optional field that simply is not printed on this form is not a
+        # deficiency; flagging it would send every such document to review for
+        # nothing. It still cannot corroborate anything, so it stays at 0.0.
+        absent_optional = spec.optional and value is None
         res.fields[spec.key] = {
             "value": value,
             "confidence": conf,
-            "needs_review": conf < CONFIDENCE_THRESHOLD,
+            "needs_review": conf < CONFIDENCE_THRESHOLD and not absent_optional,
+            "not_printed": absent_optional,
             "model_confidence": entry.get("confidence"),
             "source_text": _clean(entry.get("source_text"))[:160],
             "checks": {"passed": passed, "failed": failed},
@@ -520,6 +730,13 @@ def _assemble(model_out: Dict[str, Any], image_meta: Dict[str, Any],
         if src:
             snippets.append(src)
 
+    # Joint check: catches transposed administrative rows that every per-field
+    # check accepts. Must run after all fields exist, before confidence is summed.
+    _check_cross_field(res.fields)
+
+    # Re-read from the assembled fields: the joint checks above may have lowered a
+    # confidence after the per-field loop recorded it.
+    confs = [res.fields[f.key]["confidence"] for f in FIELD_SPECS if f.scored]
     res.low_confidence_fields = [k for k, v in res.fields.items() if v["needs_review"]]
     res.document_confidence = round(sum(confs) / len(confs), 3) if confs else 0.0
     res.status = "NEEDS_REVIEW" if res.low_confidence_fields else "EXTRACTED"
@@ -544,7 +761,11 @@ def _merge_passes(first: Dict[str, Any], second: Dict[str, Any],
             fa["confidence"] = round(min(fa["confidence"], DISAGREEMENT_CAP), 3)
             fa["checks"]["failed"].append("cross_pass_disagreement")
             fa["alternate_reading"] = fb["value"]
-        fa["needs_review"] = fa["confidence"] < CONFIDENCE_THRESHOLD
+        # Both passes agreeing that an optional field is absent is a consistent
+        # reading of a form that does not print it — not something to review.
+        absent_optional = spec.optional and agree and fa["value"] is None
+        fa["not_printed"] = absent_optional
+        fa["needs_review"] = fa["confidence"] < CONFIDENCE_THRESHOLD and not absent_optional
         if spec.scored:
             confs.append(fa["confidence"])
 

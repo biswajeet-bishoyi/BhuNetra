@@ -353,6 +353,126 @@ def test_acre_unit_handling() -> None:
     check("non-numeric extent is flagged", "not_a_number" in failed3)
 
 
+def test_joint_checks() -> None:
+    """The failure class per-field validation is blind to.
+
+    The 16-scan live benchmark measured only 50% review-flag recall: the model's
+    wrong reads were mostly *individually plausible* — a real village name in the
+    mandal row, an extent digit misread into a still-legal number. Nothing a
+    single-field regex or master-list can see. These are the two joint checks
+    that close that gap, so they need direct tests.
+    """
+    print("\n[12] Joint checks: transposition and the extent checksum")
+
+    # (a) Row transposition. Every value below is individually valid: "Rangareddy"
+    # is a real district, "Shamshabad" a real mandal — they are just in each
+    # other's rows. This is exactly the P-118/P-140 failure the benchmark found.
+    swapped = dict(CLEAN, mandal="Rangareddy", district="Shamshabad")
+    res = ex._assemble(model_output(swapped, confidence=0.97), {}, pass_count=1)
+    check("transposed mandal/district is caught despite both values being real",
+          res.fields["mandal"]["needs_review"] or res.fields["district"]["needs_review"],
+          f"mandal={res.fields['mandal']['confidence']} "
+          f"district={res.fields['district']['confidence']}")
+    check("transposition is named in the audit trail",
+          any("cross_field_inconsistent" in c
+              for k in ("mandal", "district")
+              for c in res.fields[k]["checks"]["failed"]),
+          str(res.fields["mandal"]["checks"]["failed"]))
+    check("transposition routes the document to an officer",
+          res.status == "NEEDS_REVIEW", res.status)
+
+    # (a2) The same swap, but the misplaced value is itself misread. This is the
+    # live P-140 case: mandal read "Kothalguda" while the village row said
+    # "Shamshabad" — the village name Kothwalguda, misspelled, in the mandal row.
+    # Exact list membership misses this; the row-origin test must tolerate OCR noise.
+    sloppy = dict(CLEAN, village="Shamshabad", mandal="Kothalguda")
+    res_sloppy = ex._assemble(model_output(sloppy, confidence=0.95), {}, pass_count=1)
+    check("transposition is caught even when the moved value is misspelled",
+          res_sloppy.fields["village"]["needs_review"],
+          f"village conf={res_sloppy.fields['village']['confidence']} "
+          f"{res_sloppy.fields['village']['checks']['failed']}")
+
+    # A legitimate record where village and mandal genuinely share a name must NOT
+    # trip the check — Shamshabad village sits in Shamshabad mandal.
+    res_ok = ex._assemble(model_output(CLEAN), {}, pass_count=1)
+    check("a village that legitimately shares its mandal name is not flagged",
+          not res_ok.fields["village"]["needs_review"]
+          and not res_ok.fields["mandal"]["needs_review"],
+          str(res_ok.low_confidence_fields))
+
+    # (b) Extent checksum. 12200.77 sq.m is a perfectly plausible number in
+    # isolation; it only betrays itself against the acre figure printed alongside.
+    acres = 2.97
+    good = dict(CLEAN, claimed_area_sqm=str(round(acres * ex.SQM_PER_ACRE, 2)),
+                area_acres_printed=str(acres))
+    res_good = ex._assemble(model_output(good), {}, pass_count=1)
+    check("extent that agrees with the printed acreage is corroborated",
+          "area_agrees_with_printed_acres"
+          in res_good.fields["claimed_area_sqm"]["checks"]["passed"],
+          str(res_good.fields["claimed_area_sqm"]["checks"]))
+    check("corroborated extent is not sent to review",
+          not res_good.fields["claimed_area_sqm"]["needs_review"])
+
+    bad = dict(CLEAN, claimed_area_sqm="12200.77", area_acres_printed=str(acres))
+    res_bad = ex._assemble(model_output(bad, confidence=0.99), {}, pass_count=1)
+    check("extent contradicting the printed acreage is caught",
+          res_bad.fields["claimed_area_sqm"]["needs_review"],
+          str(res_bad.fields["claimed_area_sqm"]["confidence"]))
+    check("contradiction records the arithmetic for the officer",
+          "area_contradicts_printed_acres"
+          in res_bad.fields["claimed_area_sqm"]["checks"]["failed"],
+          str(res_bad.fields["claimed_area_sqm"]["checks"]["failed"]))
+
+    # (c) The tolerance has to be tight enough to matter. The real P-117 misread
+    # deviated only 1.51% from the acre-implied value, so a loose band is a
+    # check that always says "fine".
+    check("tolerance is tight enough to catch a 1.5% extent misread",
+          ex.AREA_REDUNDANCY_TOLERANCE_PCT < 1.5,
+          str(ex.AREA_REDUNDANCY_TOLERANCE_PCT))
+
+
+def test_optional_fields() -> None:
+    """A field that simply is not printed on a form is not a defect.
+
+    Some Dharani layouts print the extent in square metres only. If an absent
+    optional field flagged the document, every such record would arrive at the
+    officer's desk amber for no reason — and an alert that fires on healthy
+    records trains people to ignore it.
+    """
+    print("\n[13] Optional fields")
+    spec = ex.FIELD_BY_KEY["area_acres_printed"]
+    check("the acre field is declared optional", spec.optional)
+    check("the acre field is excluded from accuracy scoring", not spec.scored)
+
+    res = ex._assemble(model_output(CLEAN), {}, pass_count=1)
+    f = res.fields["area_acres_printed"]
+    check("absent optional field is not flagged", not f["needs_review"], str(f))
+    check("absence is disclosed as not-printed rather than hidden", f["not_printed"])
+    check("a form without a printed acreage still clears",
+          res.status == "EXTRACTED", res.status)
+
+    # A required field going missing must still stop the document.
+    missing_required = dict(CLEAN, khatian_no="")
+    res2 = ex._assemble(model_output(missing_required), {}, pass_count=1)
+    check("a missing REQUIRED field still demands review",
+          "khatian_no" in res2.low_confidence_fields, str(res2.low_confidence_fields))
+
+    # Optional-but-present values are still verified, not waved through.
+    contradictory = dict(CLEAN, area_acres_printed="99.0")
+    res3 = ex._assemble(model_output(contradictory), {}, pass_count=1)
+    check("an optional field that IS present is still checked",
+          res3.fields["claimed_area_sqm"]["needs_review"],
+          str(res3.fields["claimed_area_sqm"]["checks"]["failed"]))
+
+    # Two passes agreeing the field is absent must not resurrect the flag.
+    out = model_output(CLEAN)
+    merged = ex._merge_passes(out, out, {}, first_ms=1.0, second_ms=1.0)
+    check("absent optional field stays unflagged after a two-pass merge",
+          not merged.fields["area_acres_printed"]["needs_review"]
+          and merged.status == "EXTRACTED",
+          f"{merged.status} {merged.low_confidence_fields}")
+
+
 if __name__ == "__main__":
     print("BhuNetra Engine 1 — offline pipeline verification")
     print("=" * 62)
@@ -367,6 +487,8 @@ if __name__ == "__main__":
     test_ground_truth_conformance()
     test_no_filename_lookup()
     test_acre_unit_handling()
+    test_joint_checks()
+    test_optional_fields()
     print("=" * 62)
     print(f"{_checks - len(_failures)}/{_checks} checks passed")
     if _failures:

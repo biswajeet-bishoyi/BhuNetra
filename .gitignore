@@ -23,8 +23,8 @@ dist-ssr/
 *.key
 
 # --- Generated runtime state ---
-# SQLite is rebuilt from the seed script; committing it would ship stale
-# officer decisions and audit rows into every clone.
+# Generated upload storage
+data/uploads/
 data/bhunetra.db
 data/*.db-journal
 data/*.db-wal

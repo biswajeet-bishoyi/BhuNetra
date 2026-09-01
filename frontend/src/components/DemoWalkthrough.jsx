@@ -169,13 +169,22 @@ export default function DemoWalkthrough({ onClose, onNavigate }) {
     }
   }, [goToStep, advance]);
 
+  const handleClose = useCallback(() => {
+    stopNarration();
+    clearTimeout(timerRef.current);
+    setPlaying(false);
+    setCurrentStep(-1);
+    if (onClose) onClose();
+  }, [stopNarration, onClose]);
+
   const skip = useCallback(() => {
     stopNarration();
     clearTimeout(timerRef.current);
     setPlaying(false);
     setCurrentStep(-1);
     onNavigate('map');
-  }, [stopNarration, onNavigate]);
+    if (onClose) onClose();
+  }, [stopNarration, onNavigate, onClose]);
 
   const toggleLanguage = () => {
     setLanguage(prev => prev === 'en' ? 'te' : 'en');
@@ -207,13 +216,14 @@ export default function DemoWalkthrough({ onClose, onNavigate }) {
           <div className="flex items-center gap-2">
             <button
               onClick={toggleLanguage}
-              className="px-2 py-1 rounded-lg bg-slate-800 text-[10px] font-bold text-slate-300 border border-slate-700 hover:bg-slate-700"
+              className="px-2 py-1 rounded-lg bg-slate-800 text-[10px] font-bold text-slate-300 border border-slate-700 hover:bg-slate-700 cursor-pointer"
             >
               {language === 'en' ? 'EN' : 'TE'} / {language === 'en' ? 'TE' : 'EN'}
             </button>
             <button
-              onClick={skip}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              onClick={handleClose}
+              title="Close Demo"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>

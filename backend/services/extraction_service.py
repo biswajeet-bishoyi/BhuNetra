@@ -327,6 +327,16 @@ def engine_status() -> Dict[str, Any]:
 
 def _call_ollama(image_b64: str, temperature: float, seed: int) -> Dict[str, Any]:
     """One extraction pass. Returns the parsed JSON object the model produced."""
+    # Fast reachability check: if Ollama is not active, fail fast in <1s rather than hanging
+    try:
+        probe = httpx.get(f"{OLLAMA_HOST}/api/tags", timeout=1.5)
+        probe.raise_for_status()
+    except Exception as exc:
+        raise ExtractionUnavailable(
+            f"Cannot reach local Ollama engine at {OLLAMA_HOST} ({exc}). "
+            f"Start Ollama and run 'ollama pull {VISION_MODEL}'."
+        ) from exc
+
     payload = {
         "model": VISION_MODEL,
         "prompt": PROMPT,
@@ -341,8 +351,9 @@ def _call_ollama(image_b64: str, temperature: float, seed: int) -> Dict[str, Any
             "num_ctx": 4096,
         },
     }
+    client_timeout = httpx.Timeout(timeout=REQUEST_TIMEOUT, connect=2.0)
     try:
-        resp = httpx.post(f"{OLLAMA_HOST}/api/generate", json=payload, timeout=REQUEST_TIMEOUT)
+        resp = httpx.post(f"{OLLAMA_HOST}/api/generate", json=payload, timeout=client_timeout)
     except httpx.HTTPError as exc:
         raise ExtractionUnavailable(
             f"Cannot reach the local extraction engine at {OLLAMA_HOST}. "

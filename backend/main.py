@@ -21,7 +21,8 @@ from routers import (
     blockchain,
     documents,
     certificate,
-    auth
+    auth,
+    analytics
 )
 
 # Initialize DB tables
@@ -54,6 +55,7 @@ app.include_router(blockchain.router, prefix="/api")
 app.include_router(documents.router, prefix="/api")
 app.include_router(certificate.router, prefix="/api")
 app.include_router(auth.router, prefix="/api")
+app.include_router(analytics.router, prefix="/api")
 
 # Also include routes without /api prefix for backward compatibility
 app.include_router(ocr.router)
@@ -67,6 +69,7 @@ app.include_router(blockchain.router)
 app.include_router(documents.router)
 app.include_router(certificate.router)
 app.include_router(auth.router)
+app.include_router(analytics.router)
 
 # Serve synthetic scan files and satellite images
 data_dir = os.path.join(os.path.dirname(__file__), "..", "data")

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Upload, FileText, CheckCircle2, AlertTriangle, Cpu, RefreshCw,
-  ShieldAlert, PencilLine, XCircle, Info
+  ShieldAlert, PencilLine, XCircle, Info, Hash, ArrowRight
 } from 'lucide-react';
+import DocumentReviewPanel from './DocumentReviewPanel';
 
 /**
  * Engine 1 — Document Digitization Workbench.
@@ -71,12 +72,17 @@ const TONE_TEXT = {
 };
 
 export default function OCRScanner({ onSelectParcel }) {
+  // ---- Document lifecycle state machine ----
+  // step: 'upload' | 'extracting' | 'review' | 'approved' | null
+  const [step, setStep] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [engine, setEngine] = useState(null);
   const [edits, setEdits] = useState({});
+  const [lifecycleDocId, setLifecycleDocId] = useState(null);
+  const [lifecycleStatus, setLifecycleStatus] = useState(null);
+  const [lifecycleHash, setLifecycleHash] = useState(null);
+  const [result, setResult] = useState(null);
 
   useEffect(() => {
     // Fire-and-forget; never block UI render on the engine status ping.
@@ -93,24 +99,72 @@ export default function OCRScanner({ onSelectParcel }) {
   }, []);
 
   const runExtraction = useCallback(async (blob, filename) => {
-    setLoading(true);
+    setStep('extracting');
     setError(null);
     setResult(null);
     setEdits({});
+    setLifecycleDocId(null);
+    setLifecycleHash(null);
+
     try {
-      const formData = new FormData();
-      formData.append('file', blob, filename);
-      const res = await fetch('/api/ocr/extract?passes=auto', { method: 'POST', body: formData });
-      const body = await res.json();
-      if (!res.ok) {
-        setError({ status: res.status, message: body.detail || 'Extraction failed.' });
+      // 1. Upload the document and get document_id
+      const uploadForm = new FormData();
+      uploadForm.append('file', blob, filename);
+      const uploadRes = await fetch('/api/documents/upload', { method: 'POST', body: uploadForm });
+      if (!uploadRes.ok) {
+        const err = await uploadRes.json();
+        setError({ status: uploadRes.status, message: err.detail || 'Upload failed.' });
+        setStep(null);
         return;
       }
-      setResult(body.data);
+      const uploadData = await uploadRes.json();
+      setLifecycleDocId(uploadData.document_id);
+
+      // 2. Run extraction via the document lifecycle endpoint
+      const extractRes = await fetch(`/api/documents/${uploadData.document_id}/extract?passes=auto`, { method: 'POST' });
+      if (!extractRes.ok) {
+        const err = await extractRes.json();
+        setError({ status: extractRes.status, message: err.detail || 'Extraction failed.' });
+        setStep(null);
+        return;
+      }
+      const extractData = await extractRes.json();
+
+      // Build a result-like shape from the extraction response
+      // so the rest of the UI can render it without major changes
+      const r = {
+        status: extractData.status,
+        document_confidence: extractData.extraction_confidence,
+        confidence_threshold: 0.8,
+        passes: extractData.passes,
+        timing_ms: extractData.timing_ms,
+        low_confidence_fields: extractData.low_confidence_fields,
+        engine_tag: extractData.engine_tag,
+        // We need the full extraction result; fetch it from the document endpoint
+      };
+      setResult(r);
+
+      // Fetch full extraction details for the field view
+      const docRes = await fetch(`/api/documents/${uploadData.document_id}`);
+      if (docRes.ok) {
+        const docDetail = await docRes.json();
+        setResult({
+          ...r,
+          fields: docDetail.extracted_fields,
+          raw_text: docDetail.extraction_result?.raw_text,
+          disclaimer: 'Extraction via document lifecycle API. Fields corrected by officer are reflected in the review record.',
+        });
+      }
+
+      // Transition to review step if there are low-confidence fields
+      if (extractData.status === 'NEEDS_REVIEW' || (extractData.low_confidence_fields && extractData.low_confidence_fields.length > 0)) {
+        setStep('review');
+      } else {
+        setStep('extracting'); // still processing
+      }
     } catch (err) {
       setError({ status: 0, message: `Could not reach the digitization service. ${err.message}` });
-    } finally {
-      setLoading(false);
+      setStep(null);
     }
   }, []);
 
@@ -134,6 +188,7 @@ export default function OCRScanner({ onSelectParcel }) {
 
   const engineOnline = engine?.model_available;
   const reviewCount = result?.low_confidence_fields?.length ?? 0;
+  const isExtracting = step === 'extracting';
 
   return (
     <div className="space-y-6">
@@ -171,7 +226,7 @@ export default function OCRScanner({ onSelectParcel }) {
               <button
                 key={sample.id}
                 onClick={() => handleSampleClick(sample)}
-                disabled={loading}
+                disabled={isExtracting}
                 title={sample.hint}
                 className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-40
                            text-xs font-semibold text-amber-300 border border-slate-700 transition"
@@ -205,7 +260,7 @@ export default function OCRScanner({ onSelectParcel }) {
             <div className="relative flex-1 min-h-[360px] bg-slate-950 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center p-3">
               <img src={previewUrl} alt="Deed scan preview" className="max-h-[420px] object-contain rounded-lg shadow-xl" />
               <button
-                onClick={() => { setPreviewUrl(null); setResult(null); setError(null); setEdits({}); }}
+                onClick={() => { setPreviewUrl(null); setResult(null); setError(null); setEdits({}); setStep(null); setLifecycleHash(null); setLifecycleDocId(null); }}
                 className="absolute top-4 right-4 px-3 py-1.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-xs font-bold text-slate-300 border border-slate-700"
               >
                 Clear / Upload Another
@@ -222,14 +277,14 @@ export default function OCRScanner({ onSelectParcel }) {
               <span>Extracted Fields & Per-Field Confidence</span>
             </h3>
 
-            {loading ? (
+            {isExtracting ? (
               <div className="py-16 text-center text-slate-400 space-y-3">
                 <RefreshCw className="w-8 h-8 text-amber-400 animate-spin mx-auto" />
                 <p className="text-xs font-semibold">
                   Reading the page with the on-device vision model…
                 </p>
                 <p className="text-[10px] text-slate-500">
-                  Low-confidence fields trigger a second independent read automatically.
+                  Uploading scan, running extraction, checking field confidence…
                 </p>
               </div>
             ) : error ? (
@@ -363,6 +418,88 @@ export default function OCRScanner({ onSelectParcel }) {
                 )}
 
                 <p className="text-[10px] text-slate-500 leading-relaxed">{result.disclaimer}</p>
+              </div>
+            ) : step === 'review' && result ? (
+              <div className="space-y-3">
+                {/* Lifecycle state strip */}
+                <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center gap-2 text-[10px] text-slate-400">
+                  <Hash className="w-3 h-3 text-amber-400" />
+                  <span>Document #{lifecycleDocId}</span>
+                  <ArrowRight className="w-3 h-3 text-slate-500" />
+                  <span className="font-bold text-amber-300">{result.status}</span>
+                  <span className="ml-auto">Step: officer review</span>
+                </div>
+                <DocumentReviewPanel
+                  docId={lifecycleDocId}
+                  extractionResult={{ ...result, low_confidence_fields: result.low_confidence_fields || [] }}
+                  onCancel={() => setStep(null)}
+                  onSubmit={(resp) => {
+                    setLifecycleStatus(resp.status || 'VERIFIED');
+                    if (resp.blockchain_hash) {
+                      setLifecycleHash(resp.blockchain_hash);
+                      setStep('approved');
+                    } else if (resp.status === 'REJECTED') {
+                      setStep('rejected');
+                    } else {
+                      setStep('verified');
+                    }
+                  }}
+                />
+              </div>
+            ) : step === 'approved' && lifecycleHash ? (
+              <div className="space-y-4">
+                <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-center space-y-2">
+                  <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
+                  <h3 className="text-base font-extrabold text-emerald-300">Document Approved</h3>
+                  <p className="text-xs text-emerald-200/80">SHA-256 hash generated under IT Act 2000 Sec 65B</p>
+                  <p className="font-mono text-[10px] break-all bg-slate-950/80 p-2 rounded text-amber-300 border border-amber-500/20">
+                    {lifecycleHash}
+                  </p>
+                  <p className="text-[10px] text-slate-400">Document #{lifecycleDocId} · {lifecycleStatus || 'APPROVED'}</p>
+                </div>
+                <button
+                  onClick={() => { setStep(null); setResult(null); setPreviewUrl(null); setLifecycleHash(null); setLifecycleDocId(null); }}
+                  className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition"
+                >
+                  Start a New Document
+                </button>
+              </div>
+            ) : step === 'verified' ? (
+              <div className="space-y-3">
+                <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-center space-y-2">
+                  <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
+                  <h3 className="text-base font-extrabold text-emerald-300">Document Verified</h3>
+                  <p className="text-xs text-slate-300">The document has been reviewed and is now in VERIFIED state.</p>
+                  <p className="text-[10px] text-slate-500">Approval generates the Sec 65B cryptographic hash.</p>
+                </div>
+                <button
+                  onClick={async () => {
+                    const res = await fetch(`/api/documents/${lifecycleDocId}/approve`, { method: 'POST' });
+                    if (res.ok) {
+                      const j = await res.json();
+                      setLifecycleHash(j.blockchain_hash);
+                      setLifecycleStatus('APPROVED');
+                      setStep('approved');
+                    }
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition shadow-lg shadow-amber-500/20"
+                >
+                  Approve & Generate SHA-256 Hash
+                </button>
+              </div>
+            ) : step === 'rejected' ? (
+              <div className="space-y-3">
+                <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-center space-y-2">
+                  <XCircle className="w-10 h-10 text-rose-400 mx-auto" />
+                  <h3 className="text-base font-extrabold text-rose-300">Document Rejected</h3>
+                  <p className="text-xs text-slate-300">The document is in terminal REJECTED state. Upload a new scan to restart.</p>
+                </div>
+                <button
+                  onClick={() => { setStep(null); setResult(null); setPreviewUrl(null); }}
+                  className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition"
+                >
+                  Start Over
+                </button>
               </div>
             ) : (
               <div className="py-16 text-center text-slate-500 text-xs px-6">

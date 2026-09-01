@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, CheckCircle2, XCircle, AlertCircle, Scale, FileText, Lock, RefreshCw, Send, ShieldAlert, FileCheck } from 'lucide-react';
+import { ShieldCheck, CheckCircle2, XCircle, AlertCircle, Scale, FileText, Lock, RefreshCw, Send, ShieldAlert, FileCheck, Link2 } from 'lucide-react';
+import BlockchainVisualizer from './BlockchainVisualizer';
 
 export default function OfficerReviewQueue({ onSelectParcel, selectedRole }) {
   const [queue, setQueue] = useState([]);
@@ -9,6 +10,7 @@ export default function OfficerReviewQueue({ onSelectParcel, selectedRole }) {
   const [typedReason, setTypedReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [complianceInfo, setComplianceInfo] = useState(null);
+  const [showChain, setShowChain] = useState(false);
 
   useEffect(() => {
     fetchReviewQueue();
@@ -198,14 +200,32 @@ export default function OfficerReviewQueue({ onSelectParcel, selectedRole }) {
           )}
         </div>
 
+        {/* Blockchain Audit Chain Visualizer */}
+        <BlockchainVisualizer
+          parcelId={selectedItem?.parcel_id || ''}
+          isOpen={showChain}
+          onClose={() => setShowChain(false)}
+          onSelectParcel={onSelectParcel}
+        />
+
         {/* Decision & Audit Log Form */}
         <div className="glass-panel rounded-2xl p-5 border border-slate-800 flex flex-col justify-between">
           {selectedItem ? (
             <div className="space-y-4">
-              <div>
-                <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Officer Verification Desk</span>
-                <h3 className="text-lg font-extrabold text-slate-100 mt-0.5">Review Parcel {selectedItem.parcel_id}</h3>
-                <p className="text-xs text-slate-400">Owner: {selectedItem.owner_name} • Khatian {selectedItem.khatian_no}</p>
+              <div className="flex items-start justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">Officer Verification Desk</span>
+                  <h3 className="text-lg font-extrabold text-slate-100 mt-0.5">Review Parcel {selectedItem.parcel_id}</h3>
+                  <p className="text-xs text-slate-400">Owner: {selectedItem.owner_name} • Khatian {selectedItem.khatian_no}</p>
+                </div>
+                <button
+                  onClick={() => setShowChain(true)}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-amber-500/20 text-amber-300 border border-slate-700 text-[11px] font-semibold transition"
+                  title="View Audit Chain"
+                >
+                  <Link2 className="w-3.5 h-3.5" />
+                  <span>Audit Chain</span>
+                </button>
               </div>
 
               {/* Explanations summary */}

@@ -1,5 +1,5 @@
-import React from 'react';
-import { Shield, FileText, Map, Clock, Satellite, CheckCircle, Scale, BarChart3, Bell, LogIn, LogOut, Lock } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Shield, FileText, Map, Clock, Satellite, CheckCircle, Scale, BarChart3, Bell, LogIn, LogOut, Lock, Play, Search, X } from 'lucide-react';
 
 export default function Header({
   activeTab,
@@ -9,6 +9,8 @@ export default function Header({
   showStatusModal,
   setShowStatusModal,
   onOpenAlertModal,
+  onStartDemo,
+  onSelectParcel,
   currentUser,
   onOpenLoginModal,
   onLogout
@@ -23,6 +25,69 @@ export default function Header({
     { id: 'review', label: 'Officer Queue', icon: CheckCircle, badge: 'P0', roles: ['Revenue Officer', 'District Collector'] },
     { id: 'revenue', label: 'Revenue Court', icon: Scale, roles: ['Revenue Officer', 'District Collector'] },
   ];
+
+  // Parcel search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const searchRef = useRef(null);
+  const debounceRef = useRef(null);
+
+  const doSearch = useCallback(async (q) => {
+    if (!q || q.length < 2) {
+      setSearchResults([]);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    try {
+      const res = await fetch(`/api/analytics/search?q=${encodeURIComponent(q)}&role=${encodeURIComponent(selectedRole || 'Revenue Officer')}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSearchResults(data.results || []);
+      }
+    } catch {
+      setSearchResults([]);
+    } finally {
+      setSearching(false);
+    }
+  }, [selectedRole]);
+
+  const handleSearchChange = (e) => {
+    const v = e.target.value;
+    setSearchQuery(v);
+    clearTimeout(debounceRef.current);
+    if (v.length < 2) {
+      setSearchResults([]);
+      setSearching(false);
+      return;
+    }
+    setSearching(true);
+    debounceRef.current = setTimeout(() => doSearch(v), 300);
+  };
+
+  const handleSelectResult = (pid) => {
+    setSearchQuery('');
+    setSearchResults([]);
+    setShowDropdown(false);
+    if (onSelectParcel) {
+      onSelectParcel(pid);
+    } else {
+      setActiveTab('map');
+    }
+  };
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   // Filter tabs tailored strictly for active role
   const visibleTabs = allTabs.filter(tab => tab.roles.includes(selectedRole || 'Citizen'));
@@ -53,6 +118,59 @@ export default function Header({
 
         {/* Action Controls & Authentication */}
         <div className="flex items-center gap-2.5 flex-wrap">
+
+          {/* Parcel Search Bar */}
+          <div className="relative" ref={searchRef}>
+            <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700 text-xs">
+              <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={handleSearchChange}
+                onFocus={() => setShowDropdown(true)}
+                placeholder="Search parcel / survey / ULPIN"
+                className="bg-transparent text-slate-200 placeholder:text-slate-500 focus:outline-none w-44"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => { setSearchQuery(''); setSearchResults([]); }}
+                  className="text-slate-400 hover:text-white"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+
+            {/* Search Dropdown */}
+            {showDropdown && searchQuery.length >= 2 && (
+              <div className="absolute top-full mt-1 right-0 w-80 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-50 max-h-72 overflow-y-auto">
+                {searching ? (
+                  <div className="p-3 text-xs text-slate-400 text-center">Searching…</div>
+                ) : searchResults.length === 0 ? (
+                  <div className="p-3 text-xs text-slate-400 text-center">No parcels found for "{searchQuery}"</div>
+                ) : (
+                  searchResults.map((r) => (
+                    <button
+                      key={r.parcel_id}
+                      onClick={() => handleSelectResult(r.parcel_id)}
+                      className="w-full text-left px-3 py-2 hover:bg-slate-800 border-b border-slate-800 last:border-0 transition"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-amber-300 text-xs">{r.parcel_id}</span>
+                        <span className="text-[10px] text-slate-400">{r.village}</span>
+                      </div>
+                      <div className="flex items-center justify-between mt-0.5">
+                        <span className="text-[10px] text-slate-400">Sy. {r.survey_no} · ULPIN {r.ulpin}</span>
+                        {selectedRole !== 'Citizen' && (
+                          <span className="text-[10px] text-slate-300">{r.owner_name}</span>
+                        )}
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
           {/* Status Modal Trigger */}
           <button
             onClick={() => setShowStatusModal(true)}
@@ -60,6 +178,16 @@ export default function Header({
           >
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
             <span>Engine Status</span>
+          </button>
+
+          {/* Demo Walkthrough Trigger */}
+          <button
+            onClick={onStartDemo}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold transition cursor-pointer"
+            title="Watch the 90-second guided demo tour"
+          >
+            <Play className="w-3.5 h-3.5 fill-current" />
+            <span>Demo Tour</span>
           </button>
 
           {/* User Profile & Auth State */}

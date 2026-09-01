@@ -10,6 +10,8 @@ import RevenueCourtManager from './components/RevenueCourtManager';
 import CollectorAnalytics from './components/CollectorAnalytics';
 import CitizenAlertModal from './components/CitizenAlertModal';
 import LoginModal from './components/LoginModal';
+import DocumentsView from './components/DocumentsView';
+import DemoWalkthrough from './components/DemoWalkthrough';
 import { Shield, Scale, FileCheck, Lock } from 'lucide-react';
 
 export default function App() {
@@ -27,6 +29,7 @@ export default function App() {
 
   const [parcelsData, setParcelsData] = useState(null);
   const [selectedParcel, setSelectedParcel] = useState(null);
+  const [showDemoWalkthrough, setShowDemoWalkthrough] = useState(false);
 
   useEffect(() => {
     fetchParcels();
@@ -101,6 +104,8 @@ export default function App() {
           showStatusModal={showStatusModal}
           setShowStatusModal={setShowStatusModal}
           onOpenAlertModal={() => setShowFraudAlertModal(true)}
+          onStartDemo={() => setShowDemoWalkthrough(true)}
+          onSelectParcel={handleSelectParcelById}
           currentUser={currentUser}
           onOpenLoginModal={() => setShowLoginModal(true)}
           onLogout={handleLogout}
@@ -125,6 +130,20 @@ export default function App() {
           onClose={() => setShowFraudAlertModal(false)}
           selectedParcelId={selectedParcel?.properties?.parcel_id || 'P-105'}
         />
+
+        {/* Guided Demo Walkthrough */}
+        {showDemoWalkthrough && (
+          <DemoWalkthrough
+            onClose={() => setShowDemoWalkthrough(false)}
+            onNavigate={(tab) => {
+              setActiveTab(tab);
+              if (tab === 'map' && parcelsData?.features) {
+                const p105 = parcelsData.features.find(f => f.properties.parcel_id === 'P-105');
+                if (p105) setSelectedParcel(p105);
+              }
+            }}
+          />
+        )}
 
         {/* Main Application Container */}
         <main className="max-w-7xl mx-auto px-4 py-6">
@@ -166,6 +185,10 @@ export default function App() {
 
           {activeTab === 'analytics' && (
             <CollectorAnalytics onSelectParcel={handleSelectParcelById} />
+          )}
+
+          {activeTab === 'documents' && (
+            <DocumentsView onSelectParcel={handleSelectParcelById} />
           )}
         </main>
       </div>

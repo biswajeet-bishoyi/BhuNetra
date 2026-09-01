@@ -22,7 +22,8 @@ from routers import (
     documents,
     certificate,
     auth,
-    analytics
+    analytics,
+    mutations
 )
 
 # Initialize DB tables
@@ -70,6 +71,8 @@ app.include_router(documents.router)
 app.include_router(certificate.router)
 app.include_router(auth.router)
 app.include_router(analytics.router)
+app.include_router(mutations.router)
+app.include_router(mutations.router, prefix="/api")
 
 # Serve synthetic scan files and satellite images
 data_dir = os.path.join(os.path.dirname(__file__), "..", "data")

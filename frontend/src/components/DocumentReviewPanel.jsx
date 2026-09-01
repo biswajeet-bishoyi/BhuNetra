@@ -112,7 +112,7 @@ export default function DocumentReviewPanel({ docId, extractionResult, onSubmit,
                   <span className="text-[10px] uppercase font-bold text-amber-300 tracking-wider">{label}</span>
                   <span className="text-[10px] font-bold text-amber-400 flex items-center gap-1">
                     <AlertTriangle className="w-3 h-3" />
-                    Low confidence ({(f?.confidence ?? 0) * 100.toFixed(0)}%)
+                    Low confidence ({((f?.confidence ?? 0) * 100).toFixed(0)}%)
                   </span>
                 </div>
                 <input

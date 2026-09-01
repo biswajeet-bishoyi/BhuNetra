@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Shield, CheckCircle, AlertTriangle, ShieldAlert, Printer, X, FileCheck, Lock, QrCode, Download } from 'lucide-react';
+import { Shield, CheckCircle, AlertTriangle, ShieldAlert, Printer, X, FileCheck, Lock, QrCode, Download, FileText } from 'lucide-react';
 
 export default function LandHealthCard({ parcelId, selectedRole, isOpen, onClose }) {
   const [certData, setCertData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const printRef = useRef();
 
   useEffect(() => {
@@ -31,6 +32,31 @@ export default function LandHealthCard({ parcelId, selectedRole, isOpen, onClose
     window.print();
   };
 
+  const handleDownloadPdf = async () => {
+    setDownloadingPdf(true);
+    try {
+      const res = await fetch(`/api/certificate/${parcelId}/export-pdf?role=${encodeURIComponent(selectedRole || 'Revenue Officer')}`);
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `BhuNetra-Certificate-${parcelId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } else {
+        const err = await res.json();
+        alert(`PDF download failed: ${err.detail || 'Unknown error'}`);
+      }
+    } catch (err) {
+      alert(`PDF download error: ${err.message}`);
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   const payload = certData?.payload;
@@ -51,11 +77,20 @@ export default function LandHealthCard({ parcelId, selectedRole, isOpen, onClose
           </div>
           <div className="flex items-center gap-2">
             <button
+              onClick={handleDownloadPdf}
+              disabled={downloadingPdf}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-slate-100 text-xs font-bold transition shadow-lg"
+              title="Download as PDF"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>{downloadingPdf ? 'Generating…' : 'PDF'}</span>
+            </button>
+            <button
               onClick={handlePrint}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition shadow-lg shadow-amber-500/20"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>Print Certificate</span>
+              <span>Print</span>
             </button>
             <button
               onClick={onClose}

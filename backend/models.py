@@ -173,6 +173,25 @@ class Document(Base):
             self.upload_timestamp = datetime.utcnow()
 
 
+class MutationRequest(Base):
+    """
+    Represents a pending parcel mutation request submitted by a Revenue Officer.
+    The new geometry is stored as GeoJSON text so no spatialite extension is needed.
+    """
+    __tablename__ = "mutation_requests"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    parcel_id = Column(String, index=True, nullable=True)  # may be null for new parcels
+    requested_by = Column(String)
+    reason = Column(Text)
+    geometry_geojson = Column(Text)  # GeoJSON Polygon of the proposed new boundary
+    status = Column(String, default="PENDING")  # PENDING, APPROVED, REJECTED, SUPERSEDED
+    created_at = Column(DateTime, default=datetime.utcnow)
+    reviewed_by = Column(String, nullable=True)
+    reviewed_at = Column(DateTime, nullable=True)
+    review_notes = Column(Text, nullable=True)
+
+
 class OwnershipTransfer(Base):
     __tablename__ = "ownership_transfers"
 

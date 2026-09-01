@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Shield, FileText, Map, Clock, Satellite, CheckCircle, Scale, BarChart3, Bell, LogIn, LogOut, Lock, Play, Search, X } from 'lucide-react';
+import { Shield, FileText, Map, Clock, Satellite, CheckCircle, Scale, BarChart3, Bell, LogIn, LogOut, Lock, Play, Search, X, Globe, Pen, FolderOpen } from 'lucide-react';
+import { useLang } from '../i18n';
 
 export default function Header({
   activeTab,
@@ -15,15 +16,19 @@ export default function Header({
   onOpenLoginModal,
   onLogout
 }) {
+  const { lang, setLang, t } = useLang();
+
   // Clean, concise tab definitions strictly configured per role
   const allTabs = [
-    { id: 'analytics', label: 'Executive Analytics', icon: BarChart3, badge: 'Executive', roles: ['District Collector'] },
-    { id: 'map', label: 'GIS Map', icon: Map, roles: ['Citizen', 'Revenue Officer', 'District Collector'] },
-    { id: 'ocr', label: 'Registry OCR', icon: FileText, roles: ['Citizen', 'Revenue Officer', 'District Collector'] },
-    { id: 'ownership', label: 'Ownership Graph', icon: Clock, roles: ['Citizen', 'Revenue Officer', 'District Collector'] },
-    { id: 'satellite', label: 'Satellite Cross-Check', icon: Satellite, roles: ['Citizen', 'Revenue Officer', 'District Collector'] },
-    { id: 'review', label: 'Officer Queue', icon: CheckCircle, badge: 'P0', roles: ['Revenue Officer', 'District Collector'] },
-    { id: 'revenue', label: 'Revenue Court', icon: Scale, roles: ['Revenue Officer', 'District Collector'] },
+    { id: 'analytics', label: t('tab.analytics') || 'Executive Analytics', icon: BarChart3, badge: 'Executive', roles: ['District Collector'] },
+    { id: 'map', label: t('tab.map') || 'GIS Map', icon: Map, roles: ['Citizen', 'Revenue Officer', 'District Collector'] },
+    { id: 'ocr', label: t('tab.ocr') || 'Registry OCR', icon: FileText, roles: ['Citizen', 'Revenue Officer', 'District Collector'] },
+    { id: 'ownership', label: t('tab.ownership') || 'Ownership Graph', icon: Clock, roles: ['Citizen', 'Revenue Officer', 'District Collector'] },
+    { id: 'satellite', label: t('tab.satellite') || 'Satellite Cross-Check', icon: Satellite, roles: ['Citizen', 'Revenue Officer', 'District Collector'] },
+    { id: 'review', label: t('tab.review') || 'Officer Queue', icon: CheckCircle, badge: 'P0', roles: ['Revenue Officer', 'District Collector'] },
+    { id: 'revenue', label: t('tab.revenue') || 'Revenue Court', icon: Scale, roles: ['Revenue Officer', 'District Collector'] },
+    { id: 'documents', label: t('tab.documents') || 'Documents', icon: FolderOpen, roles: ['Revenue Officer', 'District Collector'] },
+    { id: 'mutations', label: t('tab.mutations') || 'Mutations', icon: Pen, roles: ['Revenue Officer', 'District Collector'] },
   ];
 
   // Parcel search state
@@ -178,6 +183,17 @@ export default function Header({
           >
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
             <span>Engine Status</span>
+          </button>
+
+          {/* Language toggle (English / Telugu) */}
+          <button
+            onClick={() => setLang(lang === 'en' ? 'te' : 'en')}
+            className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-xs font-bold text-slate-200 border border-slate-700 transition cursor-pointer"
+            title="Toggle language"
+          >
+            <Globe className="w-3.5 h-3.5 text-amber-400" />
+            <span>{lang === 'en' ? 'EN' : 'TE'}</span>
+            <span className="text-slate-500 text-[10px]">/ {lang === 'en' ? 'TE' : 'EN'}</span>
           </button>
 
           {/* Demo Walkthrough Trigger */}

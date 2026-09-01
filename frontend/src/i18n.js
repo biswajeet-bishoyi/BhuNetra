@@ -21,6 +21,7 @@ const DICTIONARY = {
     'tab.analytics': 'Executive Analytics',
     'tab.documents': 'Documents',
     'tab.mutations': 'Mutations',
+    'tab.batch': 'Batch Process',
     // Buttons
     'btn.approve': 'Approve',
     'btn.reject': 'Reject',
@@ -56,6 +57,7 @@ const DICTIONARY = {
     'tab.analytics': 'విశ్లేషణలు',
     'tab.documents': 'పత్రాలు',
     'tab.mutations': 'మ్యుటేషన్లు',
+    'tab.batch': 'బ్యాచ్ ప్రాసెసింగ్',
     'btn.approve': 'ఆమోదించు',
     'btn.reject': 'తిరస్కరించు',
     'btn.refresh': 'రిఫ్రెష్',

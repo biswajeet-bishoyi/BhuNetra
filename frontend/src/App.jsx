@@ -11,6 +11,7 @@ import CollectorAnalytics from './components/CollectorAnalytics';
 import CitizenAlertModal from './components/CitizenAlertModal';
 import LoginModal from './components/LoginModal';
 import DocumentsView from './components/DocumentsView';
+import BatchUpload from './components/BatchUpload';
 import MutationsView from './components/MutationsView';
 import DemoWalkthrough from './components/DemoWalkthrough';
 import ConsentDialog, { hasAcceptedConsent, recordDecline, clearConsent } from './components/ConsentDialog';
@@ -231,6 +232,10 @@ export default function App() {
 
             {activeTab === 'documents' && (
               <DocumentsView onSelectParcel={handleSelectParcelById} />
+            )}
+
+            {activeTab === 'batch' && (
+              <BatchUpload />
             )}
 
             {activeTab === 'mutations' && (

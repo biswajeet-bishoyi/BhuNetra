@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Shield, FileText, Map, Clock, Satellite, CheckCircle, Scale, BarChart3, Bell, LogIn, LogOut, Lock, Play, Search, X, Globe, Pen, FolderOpen } from 'lucide-react';
+import { Shield, FileText, Map, Clock, Satellite, CheckCircle, Scale, BarChart3, Bell, LogIn, LogOut, Lock, Play, Search, X, Globe, Pen, FolderOpen, Layers } from 'lucide-react';
 import { useLang } from '../i18n';
 
 export default function Header({
@@ -28,6 +28,7 @@ export default function Header({
     { id: 'review', label: t('tab.review') || 'Officer Queue', icon: CheckCircle, badge: 'P0', roles: ['Revenue Officer', 'District Collector'] },
     { id: 'revenue', label: t('tab.revenue') || 'Revenue Court', icon: Scale, roles: ['Revenue Officer', 'District Collector'] },
     { id: 'documents', label: t('tab.documents') || 'Documents', icon: FolderOpen, roles: ['Revenue Officer', 'District Collector'] },
+    { id: 'batch', label: t('tab.batch') || 'Batch Process', icon: Layers, roles: ['Revenue Officer', 'District Collector'] },
     { id: 'mutations', label: t('tab.mutations') || 'Mutations', icon: Pen, roles: ['Revenue Officer', 'District Collector'] },
   ];
 

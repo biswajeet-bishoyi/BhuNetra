@@ -90,6 +90,13 @@ class DocumentListResponse(BaseModel):
     documents: list[dict]
 
 
+class BatchUploadResponse(BaseModel):
+    total: int
+    succeeded: int
+    failed: int
+    results: list[dict]
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -159,6 +166,153 @@ def _serialize(doc: Document) -> dict:
 # ---------------------------------------------------------------------------
 
 router = APIRouter(prefix="/documents", tags=["Phase 3 — Document Lifecycle"])
+
+MAX_BATCH_FILES = 20
+
+
+@router.post("/batch", response_model=BatchUploadResponse)
+async def batch_upload_documents(
+    files: list[UploadFile] = File(...),
+    extract: bool = Query(False, description="Automatically run extraction after upload"),
+    db: Session = Depends(get_db),
+):
+    """
+    Upload multiple document scans in a single request and optionally run
+    OCR extraction on each one sequentially.
+
+    Each file that fails validation is recorded in the results array with
+    an error message rather than aborting the entire batch.
+    """
+    if len(files) > MAX_BATCH_FILES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Maximum {MAX_BATCH_FILES} files per batch request.",
+        )
+
+    results = []
+    succeeded = 0
+    failed = 0
+
+    for file in files:
+        name = (file.filename or "").lower()
+        try:
+            # --- upload step ---
+            if name and not name.endswith(ALLOWED_SUFFIXES):
+                raise ValueError(f"Unsupported file type: {name}")
+
+            data = await file.read()
+            if not data:
+                raise ValueError("Empty upload.")
+            if len(data) > MAX_UPLOAD_BYTES:
+                raise ValueError(f"File exceeds the 12 MB limit.")
+
+            fhash = _file_hash(data)
+
+            # Persist
+            data_dir = Path(__file__).parent.parent.parent / "data"
+            uploads_dir = data_dir / "uploads"
+            uploads_dir.mkdir(parents=True, exist_ok=True)
+            file_path = uploads_dir / f"{fhash}_{file.filename}"
+            if not file_path.exists():
+                file_path.write_bytes(data)
+
+            # Deduplicate
+            existing = db.query(Document).filter(Document.file_hash == fhash).first()
+            if existing:
+                results.append({
+                    "filename": file.filename,
+                    "document_id": existing.id,
+                    "status": existing.status,
+                    "file_hash": fhash,
+                    "extracted": False,
+                    "error": None,
+                })
+                succeeded += 1
+                continue
+
+            doc = Document(
+                source_filename=file.filename or "unknown",
+                file_hash=fhash,
+                status="UPLOADED",
+                upload_timestamp=datetime.utcnow(),
+            )
+            db.add(doc)
+            db.commit()
+            db.refresh(doc)
+
+            entry = {
+                "filename": file.filename,
+                "document_id": doc.id,
+                "status": doc.status,
+                "file_hash": fhash,
+                "extracted": False,
+                "error": None,
+            }
+
+            # --- optional extraction step ---
+            if extract:
+                try:
+                    scan_path = data_dir / "uploads" / f"{fhash}_{file.filename}"
+                    if not scan_path.exists():
+                        raise FileNotFoundError(f"Scan file not on disk: {file.filename}")
+
+                    raw_bytes = scan_path.read_bytes()
+                    from services import extraction_service as ex
+                    result = ex.extract_document(raw_bytes, passes="auto")
+                    result_dict = result.to_dict()
+                    parcel_hint = ex.derive_parcel_hint(result_dict.get("values", {}))
+
+                    doc.status = result.status
+                    doc.extraction_result = json.dumps(result_dict)
+                    doc.extracted_fields = json.dumps(result_dict.get("values", {}))
+                    doc.extraction_confidence = result.document_confidence
+                    doc.extraction_passes = result.passes
+                    doc.extraction_timing_ms = result.timing_ms
+                    doc.extraction_timestamp = datetime.utcnow()
+                    doc.extraction_engine_tag = result.engine_tag
+                    doc.low_confidence_fields = json.dumps(result.low_confidence_fields)
+                    doc.parcel_id_hint = parcel_hint
+                    db.commit()
+
+                    entry["status"] = doc.status
+                    entry["extracted"] = True
+                    entry["extraction_confidence"] = result.document_confidence
+                    entry["extraction_engine_tag"] = result.engine_tag
+                    entry["low_confidence_fields"] = result.low_confidence_fields
+                    entry["parcel_id_hint"] = parcel_hint
+                except Exception as exc:
+                    entry["extraction_error"] = str(exc)
+
+            results.append(entry)
+            succeeded += 1
+
+        except ValueError as exc:
+            results.append({
+                "filename": file.filename,
+                "document_id": None,
+                "status": "FAILED",
+                "file_hash": None,
+                "extracted": False,
+                "error": str(exc),
+            })
+            failed += 1
+        except Exception as exc:
+            results.append({
+                "filename": file.filename,
+                "document_id": None,
+                "status": "FAILED",
+                "file_hash": None,
+                "extracted": False,
+                "error": f"Unexpected error: {exc}",
+            })
+            failed += 1
+
+    return BatchUploadResponse(
+        total=len(files),
+        succeeded=succeeded,
+        failed=failed,
+        results=results,
+    )
 
 
 @router.post("/upload", response_model=UploadResponse)

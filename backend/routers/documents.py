@@ -53,6 +53,9 @@ class ExtractResponse(BaseModel):
     engine_tag: str
     passes: int
     timing_ms: float
+    fields: dict | None = None
+    extracted_fields: dict | None = None
+    raw_text: str | None = None
 
 
 class OfficerCorrection(BaseModel):

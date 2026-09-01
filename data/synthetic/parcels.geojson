@@ -201,8 +201,8 @@
         "mandal": "Shamshabad",
         "district": "Rangareddy",
         "state": "Telangana",
-        "claimed_area_sqm": 15075.63,
-        "actual_area_sqm": 15075.63,
+        "claimed_area_sqm": 11250.0,
+        "actual_area_sqm": 9850.0,
         "land_use_claim": "Agricultural",
         "revenue_court_status": "Court Case",
         "is_anomalous": true,
@@ -346,8 +346,8 @@
         "actual_area_sqm": 11940.02,
         "land_use_claim": "Agricultural",
         "revenue_court_status": "Clean",
-        "is_anomalous": false,
-        "anomaly_type": "CLEAN"
+        "is_anomalous": true,
+        "anomaly_type": "RAPID_RESALE"
       },
       "geometry": {
         "type": "Polygon",
@@ -530,8 +530,8 @@
         "mandal": "Shamshabad",
         "district": "Rangareddy",
         "state": "Telangana",
-        "claimed_area_sqm": 19371.9,
-        "actual_area_sqm": 12107.44,
+        "claimed_area_sqm": 4500.0,
+        "actual_area_sqm": 2800.0,
         "land_use_claim": "Agricultural",
         "revenue_court_status": "Clean",
         "is_anomalous": true,
@@ -628,8 +628,8 @@
         "actual_area_sqm": 10542.64,
         "land_use_claim": "Agricultural",
         "revenue_court_status": "Clean",
-        "is_anomalous": false,
-        "anomaly_type": "CLEAN"
+        "is_anomalous": true,
+        "anomaly_type": "RAPID_RESALE"
       },
       "geometry": {
         "type": "Polygon",
@@ -824,7 +824,7 @@
         "coordinates": [
           [
             [
-              78.43391384250369,
+              78.43403384250368,
               17.25605212043305
             ],
             [
@@ -840,7 +840,7 @@
               17.257024486608216
             ],
             [
-              78.43391384250369,
+              78.43403384250368,
               17.25605212043305
             ]
           ]
@@ -1004,8 +1004,8 @@
         "actual_area_sqm": 11886.37,
         "land_use_claim": "Commercial",
         "revenue_court_status": "Clean",
-        "is_anomalous": false,
-        "anomaly_type": "CLEAN"
+        "is_anomalous": true,
+        "anomaly_type": "RAPID_RESALE"
       },
       "geometry": {
         "type": "Polygon",
@@ -1376,8 +1376,8 @@
         "mandal": "Shamshabad",
         "district": "Rangareddy",
         "state": "Telangana",
-        "claimed_area_sqm": 17922.5,
-        "actual_area_sqm": 11201.56,
+        "claimed_area_sqm": 8200.0,
+        "actual_area_sqm": 5100.0,
         "land_use_claim": "Agricultural",
         "revenue_court_status": "Clean",
         "is_anomalous": true,

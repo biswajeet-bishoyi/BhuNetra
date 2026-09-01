@@ -79,10 +79,17 @@ export default function OCRScanner({ onSelectParcel }) {
   const [edits, setEdits] = useState({});
 
   useEffect(() => {
+    // Fire-and-forget; never block UI render on the engine status ping.
+    // The real source of truth is the engine_tag returned by /api/ocr/extract
+    // — engine-status is only a UI badge to set initial expectations.
+    let cancelled = false;
     fetch('/api/ocr/engine-status')
-      .then((r) => r.json())
-      .then((body) => setEngine(body.data))
-      .catch(() => setEngine({ reachable: false, model_available: false, engine_tag: 'UNAVAILABLE' }));
+      .then((r) => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
+      .then((body) => { if (!cancelled && body?.data) setEngine(body.data); })
+      .catch(() => {
+        if (!cancelled) setEngine({ reachable: false, model_available: false, engine_tag: 'UNAVAILABLE' });
+      });
+    return () => { cancelled = true; };
   }, []);
 
   const runExtraction = useCallback(async (blob, filename) => {

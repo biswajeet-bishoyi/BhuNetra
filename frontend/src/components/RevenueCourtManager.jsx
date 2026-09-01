@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Scale, CheckCircle2, AlertTriangle, FileText, Save } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Scale, CheckCircle2, AlertTriangle, FileText, Save, RefreshCw } from 'lucide-react';
 
 export default function RevenueCourtManager({ parcelsData, onRefresh }) {
   const [selectedPid, setSelectedPid] = useState('P-105');
@@ -7,7 +7,44 @@ export default function RevenueCourtManager({ parcelsData, onRefresh }) {
   const [caseRef, setCaseRef] = useState('CC-2026-PAT-9081');
   const [updating, setUpdating] = useState(false);
 
-  const sampleParcels = ['P-105', 'P-118', 'P-112', 'P-101'];
+  const [allParcels, setAllParcels] = useState([]);
+  const [loadingParcels, setLoadingParcels] = useState(true);
+
+  // Load every parcel from /api/gis-check/ on mount so the dropdown
+  // reflects the full registry rather than a hard-coded list.
+  useEffect(() => {
+    let cancelled = false;
+    const fetchAll = async () => {
+      setLoadingParcels(true);
+      try {
+        const res = await fetch('/api/gis-check/');
+        if (res.ok) {
+          const json = await res.json();
+          if (!cancelled && json?.features) {
+            const ids = json.features
+              .map((f) => f?.properties?.parcel_id)
+              .filter(Boolean);
+            setAllParcels(ids);
+            if (ids.length && !ids.includes(selectedPid)) {
+              setSelectedPid(ids[0]);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load parcel list for Revenue Court dropdown', err);
+      } finally {
+        if (!cancelled) setLoadingParcels(false);
+      }
+    };
+    fetchAll();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Prefer the live list; fall back to a small default set if the API is offline.
+  const sampleParcels = allParcels.length > 0
+    ? allParcels
+    : ['P-105', 'P-118', 'P-112', 'P-101'];
 
   const handleUpdate = async () => {
     setUpdating(true);
@@ -68,12 +105,20 @@ export default function RevenueCourtManager({ parcelsData, onRefresh }) {
             <select
               value={selectedPid}
               onChange={(e) => setSelectedPid(e.target.value)}
-              className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:border-amber-500 focus:outline-none"
+              disabled={loadingParcels}
+              className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:border-amber-500 focus:outline-none disabled:opacity-60"
             >
-              {sampleParcels.map((pid) => (
+              {loadingParcels && <option value="">Loading parcels…</option>}
+              {!loadingParcels && sampleParcels.map((pid) => (
                 <option key={pid} value={pid}>Parcel {pid}</option>
               ))}
             </select>
+            {!loadingParcels && (
+              <p className="text-[10px] text-slate-500 mt-1.5 flex items-center gap-1">
+                <RefreshCw className="w-3 h-3" />
+                {sampleParcels.length} parcels loaded from /api/gis-check/
+              </p>
+            )}
           </div>
 
           <div>

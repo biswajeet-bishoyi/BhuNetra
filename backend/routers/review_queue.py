@@ -33,7 +33,7 @@ def get_officer_review_queue(role: str = Query("Revenue Officer"), db: Session =
 
     for feat in data["features"]:
         pid = feat["properties"]["parcel_id"]
-        risk_info = compute_fraud_risk_ensemble(pid, db)
+        risk_info = compute_fraud_risk_ensemble(pid, role=role, db=db)
         
         # Look up DB state if decision was already made
         audit_records = db.query(OfficerAuditLog).filter(OfficerAuditLog.parcel_id == pid).order_by(OfficerAuditLog.timestamp.desc()).all()

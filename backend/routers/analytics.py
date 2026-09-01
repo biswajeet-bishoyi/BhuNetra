@@ -220,7 +220,7 @@ def mandal_stats(db: Session = Depends(get_db)):
 
 
 @router.get("/anomaly-trends")
-def anomaly_trends():
+def anomaly_trends(db: Session = Depends(get_db)):
     """
     Time-series of ensemble risk scores per parcel. Since the synthetic
     data is a single snapshot, generate a 12-month synthetic timeline by

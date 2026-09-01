@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Shield, FileText, Map, Clock, Satellite, CheckCircle, Scale, BarChart3, Bell, LogIn, LogOut, Lock, Play, Search, X, Globe, Pen, FolderOpen, Layers } from 'lucide-react';
+import { Shield, FileText, Map, Clock, Satellite, CheckCircle, Scale, BarChart3, Bell, LogIn, LogOut, Lock, Play, Search, X, Globe, Pen, FolderOpen, Layers, TrendingUp } from 'lucide-react';
 import { useLang } from '../i18n';
 
 export default function Header({
@@ -30,6 +30,7 @@ export default function Header({
     { id: 'documents', label: t('tab.documents') || 'Documents', icon: FolderOpen, roles: ['Revenue Officer', 'District Collector'] },
     { id: 'batch', label: t('tab.batch') || 'Batch Process', icon: Layers, roles: ['Revenue Officer', 'District Collector'] },
     { id: 'mutations', label: t('tab.mutations') || 'Mutations', icon: Pen, roles: ['Revenue Officer', 'District Collector'] },
+    { id: 'timeline', label: t('tab.timeline') || 'Risk Timeline', icon: TrendingUp, roles: ['Revenue Officer', 'District Collector'] },
   ];
 
   // Parcel search state

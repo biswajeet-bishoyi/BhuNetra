@@ -13,6 +13,7 @@ import LoginModal from './components/LoginModal';
 import DocumentsView from './components/DocumentsView';
 import BatchUpload from './components/BatchUpload';
 import MutationsView from './components/MutationsView';
+import RiskTimeline from './components/RiskTimeline';
 import DemoWalkthrough from './components/DemoWalkthrough';
 import ConsentDialog, { hasAcceptedConsent, recordDecline, clearConsent } from './components/ConsentDialog';
 import { Shield, Scale, FileCheck, Lock } from 'lucide-react';
@@ -240,6 +241,10 @@ export default function App() {
 
             {activeTab === 'mutations' && (
               <MutationsView parcelsData={parcelsData} currentUser={currentUser} onSelectParcel={handleSelectParcelById} />
+            )}
+
+            {activeTab === 'timeline' && (
+              <RiskTimeline parcelsData={parcelsData} selectedParcelId={selectedParcel?.properties?.parcel_id} onSelectParcel={handleSelectParcelById} />
             )}
           </main>
         </div>

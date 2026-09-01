@@ -22,6 +22,7 @@ const DICTIONARY = {
     'tab.documents': 'Documents',
     'tab.mutations': 'Mutations',
     'tab.batch': 'Batch Process',
+    'tab.timeline': 'Risk Timeline',
     // Buttons
     'btn.approve': 'Approve',
     'btn.reject': 'Reject',
@@ -58,6 +59,7 @@ const DICTIONARY = {
     'tab.documents': 'పత్రాలు',
     'tab.mutations': 'మ్యుటేషన్లు',
     'tab.batch': 'బ్యాచ్ ప్రాసెసింగ్',
+    'tab.timeline': 'ప్రమాద కాలక్రమం',
     'btn.approve': 'ఆమోదించు',
     'btn.reject': 'తిరస్కరించు',
     'btn.refresh': 'రిఫ్రెష్',

@@ -20,17 +20,28 @@ import { Shield, Scale, FileCheck, Lock } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('map');
-  const [selectedRole, setSelectedRole] = useState('Revenue Officer');
-  const [showStatusModal, setShowStatusModal] = useState(false);
-  const [showFraudAlertModal, setShowFraudAlertModal] = useState(false);
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  
-  // Authenticated User State (Inspired by SmartHealth Auth Flow)
+  // Authenticated User State
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem('bhunetra_user');
     return saved ? JSON.parse(saved) : null;
   });
 
+  const [selectedRole, setSelectedRole] = useState(() => {
+    const saved = localStorage.getItem('bhunetra_user');
+    if (saved) {
+      try {
+        const u = JSON.parse(saved);
+        return u.role || 'Citizen';
+      } catch {
+        return 'Citizen';
+      }
+    }
+    return 'Citizen';
+  });
+
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showFraudAlertModal, setShowFraudAlertModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [parcelsData, setParcelsData] = useState(null);
   const [selectedParcel, setSelectedParcel] = useState(null);
   const [showDemoWalkthrough, setShowDemoWalkthrough] = useState(false);

@@ -96,8 +96,9 @@ export default function Header({
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // Filter tabs tailored strictly for active role
-  const visibleTabs = allTabs.filter(tab => tab.roles.includes(selectedRole || 'Citizen'));
+  // Filter tabs tailored strictly for active role: if not logged in, always public Citizen
+  const activeRole = currentUser ? currentUser.role : (selectedRole || 'Citizen');
+  const visibleTabs = allTabs.filter(tab => tab.roles.includes(activeRole));
 
   return (
     <header className="sticky top-0 z-50 glass-panel border-b border-slate-800/80 px-4 py-2.5 shadow-2xl">

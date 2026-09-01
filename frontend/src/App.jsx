@@ -7,13 +7,24 @@ import OwnershipTimeline from './components/OwnershipTimeline';
 import SatelliteComparison from './components/SatelliteComparison';
 import OfficerReviewQueue from './components/OfficerReviewQueue';
 import RevenueCourtManager from './components/RevenueCourtManager';
+import CollectorAnalytics from './components/CollectorAnalytics';
+import CitizenAlertModal from './components/CitizenAlertModal';
+import LoginModal from './components/LoginModal';
 import { Shield, Scale, FileCheck, Lock } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('map');
   const [selectedRole, setSelectedRole] = useState('Revenue Officer');
   const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showFraudAlertModal, setShowFraudAlertModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   
+  // Authenticated User State (Inspired by SmartHealth Auth Flow)
+  const [currentUser, setCurrentUser] = useState(() => {
+    const saved = localStorage.getItem('bhunetra_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+
   const [parcelsData, setParcelsData] = useState(null);
   const [selectedParcel, setSelectedParcel] = useState(null);
 
@@ -48,6 +59,36 @@ export default function App() {
     setActiveTab('map');
   };
 
+  const handleRoleChange = (newRole) => {
+    setSelectedRole(newRole);
+    if (newRole === 'District Collector' && activeTab !== 'analytics') {
+      setActiveTab('analytics');
+    }
+  };
+
+  const handleLoginSuccess = (user, token) => {
+    setCurrentUser(user);
+    localStorage.setItem('bhunetra_user', JSON.stringify(user));
+    localStorage.setItem('bhunetra_token', token);
+    setSelectedRole(user.role);
+    if (user.role === 'District Collector') {
+      setActiveTab('analytics');
+    } else if (user.role === 'Revenue Officer') {
+      setActiveTab('review');
+    } else {
+      setActiveTab('map');
+    }
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    localStorage.removeItem('bhunetra_user');
+    localStorage.removeItem('bhunetra_token');
+    setSelectedRole('Citizen');
+    setActiveTab('map');
+    setShowLoginModal(true);
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between selection:bg-amber-500 selection:text-slate-950">
       <div>
@@ -56,15 +97,33 @@ export default function App() {
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           selectedRole={selectedRole}
-          setSelectedRole={setSelectedRole}
+          setSelectedRole={handleRoleChange}
           showStatusModal={showStatusModal}
           setShowStatusModal={setShowStatusModal}
+          onOpenAlertModal={() => setShowFraudAlertModal(true)}
+          currentUser={currentUser}
+          onOpenLoginModal={() => setShowLoginModal(true)}
+          onLogout={handleLogout}
         />
 
         {/* Status Tier Modal */}
         <StatusModal
           isOpen={showStatusModal}
           onClose={() => setShowStatusModal(false)}
+        />
+
+        {/* Official Portal Sign In Modal */}
+        <LoginModal
+          isOpen={showLoginModal}
+          onClose={() => setShowLoginModal(false)}
+          onLoginSuccess={handleLoginSuccess}
+        />
+
+        {/* Citizen Fraud Alert Dispatch Simulator Modal */}
+        <CitizenAlertModal
+          isOpen={showFraudAlertModal}
+          onClose={() => setShowFraudAlertModal(false)}
+          selectedParcelId={selectedParcel?.properties?.parcel_id || 'P-105'}
         />
 
         {/* Main Application Container */}
@@ -84,11 +143,17 @@ export default function App() {
           )}
 
           {activeTab === 'ownership' && (
-            <OwnershipTimeline selectedParcelId={selectedParcel?.properties?.parcel_id || 'P-108'} />
+            <OwnershipTimeline
+              selectedParcelId={selectedParcel?.properties?.parcel_id || 'P-108'}
+              selectedRole={selectedRole}
+            />
           )}
 
           {activeTab === 'satellite' && (
-            <SatelliteComparison selectedParcelId={selectedParcel?.properties?.parcel_id || 'P-135'} />
+            <SatelliteComparison
+              selectedParcelId={selectedParcel?.properties?.parcel_id || 'P-135'}
+              selectedRole={selectedRole}
+            />
           )}
 
           {activeTab === 'review' && (
@@ -97,6 +162,10 @@ export default function App() {
 
           {activeTab === 'revenue' && (
             <RevenueCourtManager parcelsData={parcelsData} onRefresh={fetchParcels} />
+          )}
+
+          {activeTab === 'analytics' && (
+            <CollectorAnalytics onSelectParcel={handleSelectParcelById} />
           )}
         </main>
       </div>

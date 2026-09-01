@@ -1,0 +1,471 @@
+"""
+routers/documents.py — Phase 3: Document lifecycle management.
+
+Implements the UPLOADED → EXTRACTED → NEEDS_REVIEW → VERIFIED → APPROVED / REJECTED
+state machine for scanned land-record documents.
+
+Each endpoint validates transitions and records audit metadata so the Officer Audit Log
+is always consistent with the document state.
+
+API surface
+-----------
+POST   /documents/upload          Upload a scan and register it
+GET    /documents/               List documents (filterable)
+GET    /documents/{id}          Fetch a single document with full extraction result
+POST   /documents/{id}/extract  Re-run OCR extraction on the stored scan
+POST   /documents/{id}/review    Officer corrects extracted fields and transitions state
+POST   /documents/{id}/approve  Officer approves → APPROVED + SHA-256 hash generated
+POST   /documents/{id}/reject    Officer rejects → REJECTED (terminal)
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+from datetime import datetime
+from pathlib import Path
+
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from database import get_db
+from models import Document
+
+# ---------------------------------------------------------------------------
+# Pydantic schemas for request/response bodies
+# ---------------------------------------------------------------------------
+
+class UploadResponse(BaseModel):
+    document_id: int
+    status: str
+    source_filename: str
+    file_hash: str
+    message: str
+
+
+class ExtractResponse(BaseModel):
+    document_id: int
+    status: str
+    parcel_id_hint: str | None
+    extraction_confidence: float
+    low_confidence_fields: list[str]
+    engine_tag: str
+    passes: int
+    timing_ms: float
+
+
+class OfficerCorrection(BaseModel):
+    field_key: str
+    corrected_value: str
+
+
+class ReviewRequest(BaseModel):
+    officer_name: str
+    reason: str
+    corrections: list[OfficerCorrection] = []
+    target_status: str = "VERIFIED"   # VERIFIED or REJECTED
+
+
+class ReviewResponse(BaseModel):
+    document_id: int
+    status: str
+    reviewed_by: str
+    reviewed_at: str
+    corrections_applied: int
+    reason: str
+    message: str
+
+
+class ApproveResponse(BaseModel):
+    document_id: int
+    status: str
+    blockchain_hash: str
+    timestamp: str
+    message: str
+
+
+class DocumentListResponse(BaseModel):
+    total: int
+    documents: list[dict]
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+MAX_UPLOAD_BYTES = 12 * 1024 * 1024
+ALLOWED_SUFFIXES = (".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp", ".webp")
+
+
+def _file_hash(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def _serialize(doc: Document) -> dict:
+    """Convert a Document row into the API response shape."""
+    try:
+        extraction_result = json.loads(doc.extraction_result or "{}")
+    except json.JSONDecodeError:
+        extraction_result = {}
+
+    try:
+        extracted_fields = json.loads(doc.extracted_fields or "{}")
+    except json.JSONDecodeError:
+        extracted_fields = {}
+
+    try:
+        low_conf_fields = json.loads(doc.low_confidence_fields or "[]")
+    except json.JSONDecodeError:
+        low_conf_fields = []
+
+    try:
+        corrections = json.loads(doc.officer_corrections or "{}")
+    except json.JSONDecodeError:
+        corrections = {}
+
+    return {
+        "id": doc.id,
+        "source_filename": doc.source_filename,
+        "file_hash": doc.file_hash or "",
+        "status": doc.status,
+        "parcel_id": doc.parcel_id,
+        "parcel_id_hint": doc.parcel_id_hint,
+        "upload_timestamp": doc.upload_timestamp.strftime("%Y-%m-%dT%H:%M:%SZ") if doc.upload_timestamp else None,
+        "extraction_confidence": doc.extraction_confidence,
+        "extraction_passes": doc.extraction_passes,
+        "extraction_timing_ms": doc.extraction_timing_ms,
+        "extraction_timestamp": doc.extraction_timestamp.strftime("%Y-%m-%dT%H:%M:%SZ") if doc.extraction_timestamp else None,
+        "extraction_engine_tag": doc.extraction_engine_tag,
+        "low_confidence_fields": low_conf_fields,
+        "extraction_result": extraction_result,
+        "extracted_fields": extracted_fields,
+        "reviewed_by": doc.reviewed_by,
+        "reviewed_at": doc.reviewed_at.strftime("%Y-%m-%dT%H:%M:%SZ") if doc.reviewed_at else None,
+        "review_reason": doc.review_reason,
+        "officer_corrections": corrections,
+        "blockchain_hash": doc.blockchain_hash,
+        "blockchain_timestamp": doc.blockchain_timestamp.strftime("%Y-%m-%dT%H:%M:%SZ") if doc.blockchain_timestamp else None,
+        "lifecycle": {
+            "current": doc.status,
+            "valid_transitions": list(Document.valid_transitions().get(doc.status, [])),
+            "is_terminal": doc.status in {"APPROVED", "REJECTED"},
+        },
+    }
+
+
+# ---------------------------------------------------------------------------
+# Router
+# ---------------------------------------------------------------------------
+
+router = APIRouter(prefix="/documents", tags=["Phase 3 — Document Lifecycle"])
+
+
+@router.post("/upload", response_model=UploadResponse)
+async def upload_document(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    """
+    Register an uploaded scan and begin the document lifecycle.
+    The document starts in UPLOADED state and is ready for extraction.
+    """
+    name = (file.filename or "").lower()
+    if name and not name.endswith(ALLOWED_SUFFIXES):
+        raise HTTPException(
+            status_code=415,
+            detail=f"Unsupported file type. Upload a scanned page: {', '.join(ALLOWED_SUFFIXES)}",
+        )
+
+    data = await file.read()
+    if not data:
+        raise HTTPException(status_code=400, detail="Empty upload.")
+    if len(data) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail=f"Scan exceeds the 12 MB limit.")
+
+    fhash = _file_hash(data)
+
+    # Duplicate detection: if this exact file was already uploaded, return it instead.
+    existing = db.query(Document).filter(Document.file_hash == fhash).first()
+    if existing:
+        return UploadResponse(
+            document_id=existing.id,
+            status=existing.status,
+            source_filename=existing.source_filename,
+            file_hash=fhash,
+            message=f"Document already registered (id={existing.id}, status={existing.status}).",
+        )
+
+    doc = Document(
+        source_filename=file.filename or "unknown",
+        file_hash=fhash,
+        status="UPLOADED",
+        upload_timestamp=datetime.utcnow(),
+    )
+    db.add(doc)
+    db.commit()
+    db.refresh(doc)
+
+    return UploadResponse(
+        document_id=doc.id,
+        status=doc.status,
+        source_filename=doc.source_filename,
+        file_hash=fhash,
+        message=f"Document registered. Proceed to POST /documents/{doc.id}/extract to run OCR.",
+    )
+
+
+@router.get("/", response_model=DocumentListResponse)
+def list_documents(
+    status: str | None = Query(None, description="Filter by lifecycle status"),
+    parcel_id: str | None = Query(None, description="Filter by parcel ID"),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+):
+    """List all documents, optionally filtered."""
+    q = db.query(Document)
+    if status:
+        q = q.filter(Document.status == status.upper())
+    if parcel_id:
+        q = q.filter(Document.parcel_id == parcel_id)
+
+    total = q.count()
+    docs = q.order_by(Document.upload_timestamp.desc()).offset(offset).limit(limit).all()
+
+    return DocumentListResponse(
+        total=total,
+        documents=[_serialize(d) for d in docs],
+    )
+
+
+@router.get("/{doc_id}")
+def get_document(doc_id: int, db: Session = Depends(get_db)):
+    """Fetch a single document with full extraction result."""
+    doc = db.query(Document).filter(Document.id == doc_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail=f"Document {doc_id} not found.")
+    return _serialize(doc)
+
+
+@router.post("/{doc_id}/extract", response_model=ExtractResponse)
+def extract_document(doc_id: int, passes: str = Query("auto"), db: Session = Depends(get_db)):
+    """
+    Re-run Engine 1 OCR extraction on a previously-uploaded document.
+
+    transitions: UPLOADED → EXTRACTED / NEEDS_REVIEW
+    """
+    doc = db.query(Document).filter(Document.id == doc_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail=f"Document {doc_id} not found.")
+
+    if doc.status not in {"UPLOADED", "EXTRACTED", "NEEDS_REVIEW"}:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Cannot re-extract a document in status {doc.status}. "
+                   f"Only UPLOADED/EXTRACTED/NEEDS_REVIEW can be re-processed.",
+        )
+
+    # Load extraction service lazily so the import never blocks boot
+    try:
+        from services import extraction_service as ex
+    except ImportError:
+        from backend.services import extraction_service as ex
+
+    # Read the file bytes from static storage
+    data_dir = Path(__file__).parent.parent.parent / "data"
+    scan_path = data_dir / "synthetic" / "registry_scans" / doc.source_filename
+    # Fallback: check if it's in the scan folder with a predictable name
+    if not scan_path.exists():
+        scan_path = data_dir / "synthetic" / "registry_scans" / doc.source_filename
+    if not scan_path.exists():
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"Cannot locate scan file '{doc.source_filename}' in data/synthetic/registry_scans/. "
+                "The document was registered but the source file is not on disk. "
+                "Upload the file directly to trigger real extraction."
+            ),
+        )
+
+    raw_bytes = scan_path.read_bytes()
+
+    try:
+        passes_arg = int(passes) if passes in {"1", "2"} else "auto"
+        result = ex.extract_document(raw_bytes, passes=passes_arg)
+    except ex.ExtractionUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    # Persist the extraction result
+    result_dict = result.to_dict()
+    parcel_hint = ex.derive_parcel_hint(result_dict.get("values", {}))
+    corrections: dict[str, str] = {}  # empty for a fresh extraction
+
+    doc.status = result.status          # EXTRACTED or NEEDS_REVIEW
+    doc.extraction_result = json.dumps(result_dict)
+    doc.extracted_fields = json.dumps(result_dict.get("values", {}))
+    doc.extraction_confidence = result.document_confidence
+    doc.extraction_passes = result.passes
+    doc.extraction_timing_ms = result.timing_ms
+    doc.extraction_timestamp = datetime.utcnow()
+    doc.extraction_engine_tag = result.engine_tag
+    doc.low_confidence_fields = json.dumps(result.low_confidence_fields)
+    doc.parcel_id_hint = parcel_hint
+    doc.officer_corrections = json.dumps(corrections)
+
+    db.commit()
+    db.refresh(doc)
+
+    return ExtractResponse(
+        document_id=doc.id,
+        status=doc.status,
+        parcel_id_hint=parcel_hint,
+        extraction_confidence=result.document_confidence,
+        low_confidence_fields=result.low_confidence_fields,
+        engine_tag=result.engine_tag,
+        passes=result.passes,
+        timing_ms=result.timing_ms,
+    )
+
+
+@router.post("/{doc_id}/review", response_model=ReviewResponse)
+def review_document(doc_id: int, req: ReviewRequest, db: Session = Depends(get_db)):
+    """
+    Officer reviews extracted fields, applies corrections, and transitions state.
+
+    Allowed transitions:
+      - NEEDS_REVIEW → VERIFIED (officer accepted/corrected fields)
+      - NEEDS_REVIEW → REJECTED (document is illegible / fraud detected)
+      - EXTRACTED    → VERIFIED (officer accepts a clean extraction)
+    """
+    doc = db.query(Document).filter(Document.id == doc_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail=f"Document {doc_id} not found.")
+
+    if doc.status not in {"EXTRACTED", "NEEDS_REVIEW"}:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Cannot review a document in status {doc.status}. "
+                   f"Only EXTRACTED / NEEDS_REVIEW can be reviewed.",
+        )
+
+    target = req.target_status.upper()
+    if not doc.can_transition_to(target):
+        raise HTTPException(
+            status_code=409,
+            detail=f"Invalid transition: {doc.status} → {target}. "
+                   f"Allowed: {doc.valid_transitions().get(doc.status, [])}",
+        )
+
+    if not req.reason or len(req.reason.strip()) < 5:
+        raise HTTPException(
+            status_code=400,
+            detail="A typed reason of at least 5 characters is required for the audit trail.",
+        )
+
+    # Apply officer corrections to the stored extraction result
+    try:
+        corrections = {c.field_key: c.corrected_value for c in req.corrections}
+    except Exception:
+        corrections = {}
+
+    doc.officer_corrections = json.dumps(corrections)
+    doc.reviewed_by = req.officer_name
+    doc.reviewed_at = datetime.utcnow()
+    doc.review_reason = req.reason.strip()
+    doc.transition_to(target)
+    db.commit()
+    db.refresh(doc)
+
+    return ReviewResponse(
+        document_id=doc.id,
+        status=doc.status,
+        reviewed_by=doc.reviewed_by,
+        reviewed_at=doc.reviewed_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        corrections_applied=len(corrections),
+        reason=doc.review_reason,
+        message=f"Document {doc_id} transitioned to {doc.status} by {doc.reviewed_by}.",
+    )
+
+
+@router.post("/{doc_id}/approve", response_model=ApproveResponse)
+def approve_document(doc_id: int, db: Session = Depends(get_db)):
+    """
+    Approve a VERIFIED document. Generates SHA-256 hash under IT Act 2000 Sec 65B.
+
+    transitions: VERIFIED → APPROVED
+    """
+    doc = db.query(Document).filter(Document.id == doc_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail=f"Document {doc_id} not found.")
+
+    if not doc.can_transition_to("APPROVED"):
+        raise HTTPException(
+            status_code=409,
+            detail=f"Cannot approve document in status {doc.status}. "
+                   f"Must be VERIFIED first. Allowed: {doc.valid_transitions().get(doc.status, [])}",
+        )
+
+    timestamp = datetime.utcnow()
+    payload = (
+        f"BHUNETRA:{doc.id}:{doc.source_filename}:{doc.file_hash}:"
+        f"{doc.parcel_id or 'UNLINKED'}:{doc.extraction_confidence}:{timestamp.isoformat()}"
+    )
+    b_hash = "0x" + hashlib.sha256(payload.encode()).hexdigest()
+
+    doc.transition_to("APPROVED")
+    doc.blockchain_hash = b_hash
+    doc.blockchain_timestamp = timestamp
+    db.commit()
+    db.refresh(doc)
+
+    return ApproveResponse(
+        document_id=doc.id,
+        status=doc.status,
+        blockchain_hash=b_hash,
+        timestamp=timestamp.isoformat(),
+        message=f"Document {doc_id} APPROVED. Hash: {b_hash}",
+    )
+
+
+@router.post("/{doc_id}/reject", response_model=ReviewResponse)
+def reject_document(
+    doc_id: int,
+    officer_name: str = "Tahsildar / Revenue Officer",
+    reason: str = "",
+    db: Session = Depends(get_db),
+):
+    """
+    Reject a document in EXTRACTED or NEEDS_REVIEW status.
+    This is a terminal state; a new document must be uploaded for the same record.
+    """
+    doc = db.query(Document).filter(Document.id == doc_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail=f"Document {doc_id} not found.")
+
+    if not doc.can_transition_to("REJECTED"):
+        raise HTTPException(
+            status_code=409,
+            detail=f"Cannot reject document in status {doc.status}. "
+                   f"Allowed: {doc.valid_transitions().get(doc.status, [])}",
+        )
+
+    if not reason or len(reason.strip()) < 5:
+        raise HTTPException(
+            status_code=400,
+            detail="A typed reason of at least 5 characters is required for the audit trail.",
+        )
+
+    doc.reviewed_by = officer_name
+    doc.reviewed_at = datetime.utcnow()
+    doc.review_reason = reason.strip()
+    doc.transition_to("REJECTED")
+    db.commit()
+    db.refresh(doc)
+
+    return ReviewResponse(
+        document_id=doc.id,
+        status=doc.status,
+        reviewed_by=doc.reviewed_by,
+        reviewed_at=doc.reviewed_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        corrections_applied=0,
+        reason=doc.review_reason,
+        message=f"Document {doc_id} REJECTED. Upload a new scan to restart.",
+    )

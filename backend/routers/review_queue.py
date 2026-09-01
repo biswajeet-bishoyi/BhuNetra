@@ -8,6 +8,7 @@ import os
 
 from database import get_db
 from models import ParcelRecord, OfficerAuditLog
+from utils.dpdp import mask_pii_fields, pii_summary
 
 router = APIRouter(prefix="/review-queue", tags=["Officer Review Queue & Audit Log"])
 
@@ -42,9 +43,12 @@ def get_officer_review_queue(role: str = Query("Revenue Officer"), db: Session =
             status = audit_records[0].action
 
         owner_display = risk_info["owner_name"]
-        # DPDP Act 2023 Data Minimization: Mask PII for Citizen role
-        if role == "Citizen" and owner_display:
-            parts = owner_display.split()
+        # DPDP Act 2023 data minimization is now applied centrally via
+        # utils.dpdp.mask_pii_fields; risk_info already has owner_name masked for
+        # the Citizen role when passed role='Citizen'. This block is kept as a
+        # safety net for older callers.
+        if role == "Citizen" and owner_display and "X." not in str(owner_display):
+            parts = str(owner_display).split()
             if len(parts) > 1:
                 owner_display = f"{parts[0]} X. (Masked per DPDP Act)"
             else:

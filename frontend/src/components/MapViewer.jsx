@@ -1,10 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, GeoJSON, Tooltip } from 'react-leaflet';
-import { ShieldAlert, AlertCircle, CheckCircle, Scale, ArrowRight, Activity, MapPin, Sliders, Lock } from 'lucide-react';
+import { ShieldAlert, AlertCircle, CheckCircle, Scale, ArrowRight, Activity, MapPin, Sliders, Lock, FileText, Volume2, BellRing, Smartphone, MessageSquare } from 'lucide-react';
+import VoiceAssistant from './VoiceAssistant';
+import LandHealthCard from './LandHealthCard';
+import CitizenAlertModal from './CitizenAlertModal';
 
 export default function MapViewer({ parcelsData, selectedParcel, setSelectedParcel, onSelectTab, selectedRole }) {
   const [riskEnsemble, setRiskEnsemble] = useState(null);
   const [loadingRisk, setLoadingRisk] = useState(false);
+  const [showHealthCard, setShowHealthCard] = useState(false);
+  const [showFraudAlertModal, setShowFraudAlertModal] = useState(false);
 
   // Center around Shamshabad Mandal, Rangareddy District, Telangana (17.258, 78.434)
   const mapCenter = [17.258, 78.434];
@@ -13,12 +18,12 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
     if (selectedParcel?.properties?.parcel_id) {
       fetchRiskDetails(selectedParcel.properties.parcel_id);
     }
-  }, [selectedParcel]);
+  }, [selectedParcel, selectedRole]);
 
   const fetchRiskDetails = async (parcelId) => {
     setLoadingRisk(true);
     try {
-      const res = await fetch(`/api/risk-score/${parcelId}`);
+      const res = await fetch(`/api/risk-score/${parcelId}?role=${encodeURIComponent(selectedRole || 'Revenue Officer')}`);
       if (res.ok) {
         const data = await res.json();
         setRiskEnsemble(data);
@@ -85,21 +90,62 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
     return name;
   };
 
+  const [mapLayer, setMapLayer] = useState('satellite'); // 'satellite' | 'streets'
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-140px)]">
+      {/* Land Health Card Modal */}
+      <LandHealthCard
+        parcelId={selectedParcel?.properties?.parcel_id || 'P-105'}
+        selectedRole={selectedRole}
+        isOpen={showHealthCard}
+        onClose={() => setShowHealthCard(false)}
+      />
+
+      {/* Citizen Fraud Alert Dispatch Simulator Modal */}
+      <CitizenAlertModal
+        isOpen={showFraudAlertModal}
+        onClose={() => setShowFraudAlertModal(false)}
+        selectedParcelId={selectedParcel?.properties?.parcel_id || 'P-105'}
+      />
+
       {/* Map Container */}
       <div className="lg:col-span-2 glass-panel rounded-2xl overflow-hidden border border-slate-800 relative flex flex-col">
         {/* Map Header Overlay */}
-        <div className="absolute top-4 left-4 z-[400] glass-panel px-3.5 py-2 rounded-xl border border-slate-700/80 shadow-xl flex items-center gap-3">
-          <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+        <div className="absolute top-4 left-4 z-[1000] glass-panel px-3.5 py-2 rounded-xl border border-slate-700/80 shadow-2xl flex items-center gap-3 bg-slate-900/95 backdrop-blur-md">
+          <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shrink-0"></div>
           <div>
             <h3 className="text-xs font-bold text-slate-100">Shamshabad Cadastral Spatial Map</h3>
-            <p className="text-[10px] text-slate-400">Telangana Dharani Layer • In-Memory GeoPandas/Shapely Spatial Engine</p>
+            <p className="text-[10px] text-slate-400">Telangana Dharani Cadastre • In-Memory GeoPandas / Shapely</p>
           </div>
         </div>
 
+        {/* Map Layer Mode Switcher (Satellite vs Street) with z-[1000] */}
+        <div className="absolute top-4 right-4 z-[1000] glass-panel p-1 rounded-xl border border-slate-700/80 shadow-2xl flex items-center gap-1.5 text-xs bg-slate-900/95 backdrop-blur-md">
+          <button
+            onClick={() => setMapLayer('satellite')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+              mapLayer === 'satellite'
+                ? 'bg-amber-500 text-slate-950 shadow-md'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <span>🛰️ Satellite</span>
+          </button>
+          <button
+            onClick={() => setMapLayer('streets')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+              mapLayer === 'streets'
+                ? 'bg-amber-500 text-slate-950 shadow-md'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <span>🗺️ Streets</span>
+          </button>
+        </div>
+
         {/* Risk Legend Overlay */}
-        <div className="absolute bottom-4 left-4 z-[400] glass-panel px-3 py-2 rounded-xl border border-slate-700/80 shadow-xl flex items-center gap-4 text-xs font-medium">
+        <div className="absolute bottom-4 left-4 z-[1000] glass-panel px-3 py-2 rounded-xl border border-slate-700/80 shadow-2xl flex items-center gap-4 text-xs font-medium bg-slate-900/95 backdrop-blur-md">
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded bg-emerald-500"></span>
             <span className="text-slate-300">Clean / Verified</span>
@@ -121,12 +167,21 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
             style={{ width: '100%', height: '100%' }}
             zoomControl={true}
           >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-            />
+            {mapLayer === 'satellite' ? (
+              <TileLayer
+                attribution='&copy; <a href="https://www.esri.com/">Esri</a>, Maxar, Earthstar Geographics'
+                url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                maxZoom={19}
+              />
+            ) : (
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+                maxZoom={19}
+              />
+            )}
             <GeoJSON
-              key={JSON.stringify(parcelsData)}
+              key={`${JSON.stringify(parcelsData)}-${mapLayer}`}
               data={parcelsData}
               style={getParcelStyle}
               onEachFeature={onEachFeature}
@@ -140,7 +195,7 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
       </div>
 
       {/* Side Panel: Selected Parcel Details & Risk Explanation */}
-      <div className="glass-panel rounded-2xl p-5 border border-slate-800 flex flex-col justify-between overflow-y-auto">
+      <div className="glass-panel rounded-2xl p-5 border border-slate-800 flex flex-col justify-between overflow-y-auto space-y-4">
         {selectedParcel ? (
           <div className="space-y-4">
             {/* Header: Parcel ID & Risk Badge */}
@@ -201,36 +256,13 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
               </div>
             </div>
 
-            {/* Deterministic Engine 5 Weight Breakdown */}
-            {riskEnsemble && (
-              <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800/90 text-[11px] space-y-1.5">
-                <div className="flex items-center justify-between text-slate-400 font-semibold text-[10px] uppercase">
-                  <span className="flex items-center gap-1">
-                    <Sliders className="w-3 h-3 text-amber-400" />
-                    Engine 5 Weight Matrix
-                  </span>
-                  <span className="text-amber-400">Fixed Deterministic</span>
-                </div>
-                <div className="grid grid-cols-4 gap-1 text-center font-mono">
-                  <div className="bg-slate-900 p-1 rounded border border-slate-800">
-                    <div className="text-[9px] text-slate-400">GIS (E2)</div>
-                    <div className="text-amber-300 font-bold">35%</div>
-                  </div>
-                  <div className="bg-slate-900 p-1 rounded border border-slate-800">
-                    <div className="text-[9px] text-slate-400">Title (E3)</div>
-                    <div className="text-amber-300 font-bold">25%</div>
-                  </div>
-                  <div className="bg-slate-900 p-1 rounded border border-slate-800">
-                    <div className="text-[9px] text-slate-400">Sat (E4)</div>
-                    <div className="text-amber-300 font-bold">25%</div>
-                  </div>
-                  <div className="bg-slate-900 p-1 rounded border border-slate-800">
-                    <div className="text-[9px] text-slate-400">OCR (E1)</div>
-                    <div className="text-amber-300 font-bold">15%</div>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* Vernacular Voice Assistant Component */}
+            <VoiceAssistant
+              parcelId={selectedParcel.properties.parcel_id}
+              riskLevel={riskEnsemble?.ensemble_risk_level || 'GREEN'}
+              riskScore={riskEnsemble?.ensemble_risk_score || 0.0}
+              explanation={riskEnsemble?.top_explanations?.[0] || 'All spatial and title checks clean.'}
+            />
 
             {/* SHAP Explanation Panel */}
             <div className="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2.5">
@@ -264,29 +296,48 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
               )}
             </div>
 
-            {/* Navigation Actions */}
+            {/* Action Buttons */}
             <div className="space-y-2 pt-1">
+              {/* Option A: Contextual Land Protection Fraud Alerts Button */}
+              <button
+                onClick={() => setShowFraudAlertModal(true)}
+                className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold shadow-md shadow-emerald-500/10 transition cursor-pointer"
+              >
+                <Smartphone className="w-4 h-4 text-emerald-400" />
+                <span>📱 Enable WhatsApp / SMS Fraud Alerts for Sy. {selectedParcel.properties.survey_no}</span>
+              </button>
+
+              <button
+                onClick={() => setShowHealthCard(true)}
+                className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-xs font-black text-slate-950 shadow-lg shadow-amber-500/20 transition cursor-pointer"
+              >
+                <FileText className="w-4 h-4 fill-current" />
+                <span>Download / View Land Health Card (PDF)</span>
+              </button>
+
               <button
                 onClick={() => onSelectTab('ownership')}
-                className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-xs font-semibold text-slate-200 border border-slate-700 transition"
+                className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-xs font-semibold text-slate-200 border border-slate-700 transition cursor-pointer"
               >
                 <span>Inspect Ownership Timeline (Engine 3)</span>
                 <ArrowRight className="w-4 h-4 text-amber-400" />
               </button>
+
               <button
                 onClick={() => onSelectTab('satellite')}
-                className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-xs font-semibold text-slate-200 border border-slate-700 transition"
+                className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-xs font-semibold text-slate-200 border border-slate-700 transition cursor-pointer"
               >
                 <span>Check Satellite Land-Use Scene (Engine 4)</span>
                 <ArrowRight className="w-4 h-4 text-amber-400" />
               </button>
+
               {selectedRole !== 'Citizen' && (
                 <button
                   onClick={() => onSelectTab('review')}
-                  className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold shadow-lg shadow-amber-500/20 transition"
+                  className="w-full flex items-center justify-between px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-300 text-xs font-bold border border-amber-500/30 transition cursor-pointer"
                 >
                   <span>Route to Revenue Officer Queue</span>
-                  <ArrowRight className="w-4 h-4 text-slate-950" />
+                  <ArrowRight className="w-4 h-4 text-amber-400" />
                 </button>
               )}
             </div>

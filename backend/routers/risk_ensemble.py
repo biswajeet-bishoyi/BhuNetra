@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlalchemy.orm import Session
 import json
 import os
@@ -6,12 +6,17 @@ import geopandas as gpd
 from database import get_db
 from models import ParcelRecord
 from ml_models import GISAnomalyEngine
+from utils.dpdp import mask_pii_fields, pii_summary
 
 router = APIRouter(prefix="/risk-score", tags=["Engine 5 - Fraud Risk Ensemble"])
 gis_engine = GISAnomalyEngine()
 
 @router.get("/{parcel_id}")
-def compute_fraud_risk_ensemble(parcel_id: str, db: Session = Depends(get_db)):
+def compute_fraud_risk_ensemble(
+    parcel_id: str,
+    role: str = Query("Revenue Officer", description="Requesting role for DPDP masking"),
+    db: Session = Depends(get_db),
+):
     """
     Engine 5: Deterministic Weighted Fraud Risk Ensemble.
     Weights: GIS 35% | Ownership Intelligence 25% | Satellite 25% | OCR Confidence 15%.
@@ -36,13 +41,13 @@ def compute_fraud_risk_ensemble(parcel_id: str, db: Session = Depends(get_db)):
 
     # 2. Fetch ownership engine (Engine 3)
     from routers.ownership import get_ownership_timeline
-    ownership_data = get_ownership_timeline(parcel_id)
+    ownership_data = get_ownership_timeline(parcel_id, role=role)
     ownership_score = float(ownership_data.get("ownership_risk_score", 0.0))
     ownership_explanations = ownership_data.get("explanations", [])
 
     # 3. Fetch satellite engine (Engine 4)
     from routers.satellite import verify_satellite_land_use
-    sat_data = verify_satellite_land_use(parcel_id)
+    sat_data = verify_satellite_land_use(parcel_id, role=role)
     sat_score = float(sat_data.get("satellite_risk_score", 0.0))
     sat_explanations = [sat_data.get("explanation")] if sat_data.get("explanation") else []
 
@@ -91,7 +96,7 @@ def compute_fraud_risk_ensemble(parcel_id: str, db: Session = Depends(get_db)):
     if "geometry" in prop:
         del prop["geometry"]
 
-    return {
+    base = {
         "parcel_id": parcel_id,
         "owner_name": prop.get("owner_name"),
         "khatian_no": prop.get("khatian_no"),
@@ -123,3 +128,7 @@ def compute_fraud_risk_ensemble(parcel_id: str, db: Session = Depends(get_db)):
         "human_in_the_loop_required": risk_level in ["YELLOW", "RED"],
         "engine_tag": "REAL (Deterministic 35/25/25/15 Ensemble + SHAP Attribution)"
     }
+
+    # DPDP Act 2023: mask PII in Citizen view
+    base["dpdp_context"] = pii_summary(base, role)
+    return mask_pii_fields(base, role)

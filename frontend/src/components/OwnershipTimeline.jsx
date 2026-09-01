@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, ShieldAlert, ArrowRight, TrendingUp, AlertTriangle } from 'lucide-react';
+import { Clock, ShieldAlert, ArrowRight, TrendingUp, AlertTriangle, Lock } from 'lucide-react';
 
-export default function OwnershipTimeline({ selectedParcelId = 'P-108' }) {
+export default function OwnershipTimeline({ selectedParcelId = 'P-108', selectedRole = 'Revenue Officer' }) {
   const [parcelId, setParcelId] = useState(selectedParcelId);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -9,13 +9,13 @@ export default function OwnershipTimeline({ selectedParcelId = 'P-108' }) {
   const sampleParcels = ['P-108', 'P-114', 'P-105', 'P-101'];
 
   useEffect(() => {
-    fetchOwnershipTimeline(parcelId);
-  }, [parcelId]);
+    fetchOwnershipTimeline(parcelId, selectedRole);
+  }, [parcelId, selectedRole]);
 
-  const fetchOwnershipTimeline = async (pid) => {
+  const fetchOwnershipTimeline = async (pid, role) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/ownership/${pid}`);
+      const res = await fetch(`/api/ownership/${pid}?role=${encodeURIComponent(role || 'Revenue Officer')}`);
       if (res.ok) {
         const json = await res.json();
         setData(json);
@@ -34,12 +34,12 @@ export default function OwnershipTimeline({ selectedParcelId = 'P-108' }) {
         <div>
           <div className="flex items-center gap-2">
             <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-bold uppercase">
-              Engine 3 • RULE-STUB
+              Engine 3 • REAL (Multi-rule)
             </span>
             <h2 className="text-xl font-extrabold text-slate-100">Ownership Intelligence & Title Timeline</h2>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Visual transfer history and title pattern flags on suspiciously rapid resale chains (e.g. &gt;3 transfers in &lt;30 days).
+            Visual transfer history, price-escalation jumps, circular chains, and rapid resale anomaly detection.
           </p>
         </div>
 
@@ -66,10 +66,17 @@ export default function OwnershipTimeline({ selectedParcelId = 'P-108' }) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Ownership Timeline Visualization */}
         <div className="lg:col-span-2 glass-panel rounded-2xl p-6 border border-slate-800">
-          <h3 className="text-sm font-bold text-slate-200 mb-6 flex items-center gap-2">
+          <h3 className="text-sm font-bold text-slate-200 mb-4 flex items-center gap-2">
             <Clock className="w-4 h-4 text-amber-400" />
             <span>Title Registration & Ownership Chain for {parcelId}</span>
           </h3>
+
+          {data?.dpdp_context?.is_citizen_view && (
+            <div className="mb-6 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300 flex items-center gap-2">
+              <Lock className="w-4 h-4 text-amber-400 shrink-0" />
+              <span><strong>DPDP Act 2023 Masking Active:</strong> Pattadar names masked in Citizen mode (e.g. <em>FirstName X.</em>). Officer mode requires authenticated access.</span>
+            </div>
+          )}
 
           {loading ? (
             <div className="py-16 text-center text-slate-400">Loading ownership graph...</div>

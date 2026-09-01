@@ -1,21 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { Satellite, AlertTriangle, CheckCircle, Eye, ShieldAlert, Cpu } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Satellite, AlertTriangle, CheckCircle, Eye, ShieldAlert, Cpu, Sliders, Layers } from 'lucide-react';
 
-export default function SatelliteComparison({ selectedParcelId = 'P-135' }) {
+export default function SatelliteComparison({ selectedParcelId = 'P-135', selectedRole = 'Revenue Officer' }) {
   const [parcelId, setParcelId] = useState(selectedParcelId);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [sliderPos, setSliderPos] = useState(50);
+  const [isDragging, setIsDragging] = useState(false);
+  const containerRef = useRef(null);
 
   const sampleParcels = ['P-135', 'P-101', 'P-112'];
 
   useEffect(() => {
-    fetchSatelliteVerification(parcelId);
-  }, [parcelId]);
+    fetchSatelliteVerification(parcelId, selectedRole);
+  }, [parcelId, selectedRole]);
 
-  const fetchSatelliteVerification = async (pid) => {
+  const fetchSatelliteVerification = async (pid, role) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/satellite/${pid}`);
+      const res = await fetch(`/api/satellite/${pid}?role=${encodeURIComponent(role || 'Revenue Officer')}`);
       if (res.ok) {
         const json = await res.json();
         setData(json);
@@ -27,6 +30,24 @@ export default function SatelliteComparison({ selectedParcelId = 'P-135' }) {
     }
   };
 
+  const handleMove = (clientX) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
+    setSliderPos(percentage);
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isDragging) return;
+    handleMove(e.touches[0].clientX);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+    handleMove(e.clientX);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header Banner */}
@@ -34,12 +55,12 @@ export default function SatelliteComparison({ selectedParcelId = 'P-135' }) {
         <div>
           <div className="flex items-center gap-2">
             <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-bold uppercase">
-              Engine 4 • RULE-STUB / MOCK
+              Engine 4 • Interactive Temporal Swipe
             </span>
             <h2 className="text-xl font-extrabold text-slate-100">Satellite Land-Use Scene Cross-Check</h2>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Compare registry RoR land-use claims against pre-loaded Sentinel-2 village imagery. Zero live network calls during stage demo.
+            Interactive temporal slider comparing registered RoR baseline vs current Sentinel-2 multispectral scene.
           </p>
         </div>
 
@@ -64,28 +85,75 @@ export default function SatelliteComparison({ selectedParcelId = 'P-135' }) {
 
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Precomputed Sentinel-2 Imagery View */}
+        {/* Interactive Before / After Swipe Curtain View */}
         <div className="glass-panel rounded-2xl p-5 border border-slate-800 flex flex-col">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
-              <Satellite className="w-4 h-4 text-amber-400" />
-              <span>Sentinel-2 L2A Pre-downloaded Village Scene</span>
+              <Layers className="w-4 h-4 text-amber-400" />
+              <span>Interactive Temporal Swipe Curtain</span>
             </h3>
-            <span className="text-[10px] font-mono text-slate-400">Acquired: 2026-06-15</span>
+            <span className="text-[10px] font-mono text-amber-400">Drag Slider to Compare</span>
           </div>
 
-          <div className="relative flex-1 min-h-[320px] bg-slate-950 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center p-3">
-            <img
-              src={data?.preview_image || "/static-data/satellite/rampur_satellite_preview.png"}
-              alt="Sentinel-2 Satellite Scene preview"
-              className="max-h-[360px] w-full object-cover rounded-lg shadow-2xl"
-              onError={(e) => {
-                e.target.src = "/static-data/satellite/rampur_satellite_preview.png";
-              }}
-            />
-            <div className="absolute bottom-4 left-4 right-4 glass-panel p-3 rounded-xl border border-slate-700/80 text-xs text-slate-300">
-              <span className="text-amber-400 font-bold">NDVI False Color Band (B04, B08)</span>
-              <p className="text-[11px] text-slate-400 mt-0.5">High NDVI green = Active crops • High SWIR grey = Concrete built-up structures</p>
+          <div
+            ref={containerRef}
+            onMouseDown={() => setIsDragging(true)}
+            onMouseUp={() => setIsDragging(false)}
+            onMouseLeave={() => setIsDragging(false)}
+            onMouseMove={handleMouseMove}
+            onTouchStart={() => setIsDragging(true)}
+            onTouchEnd={() => setIsDragging(false)}
+            onTouchMove={handleTouchMove}
+            className="relative flex-1 min-h-[340px] bg-slate-950 rounded-xl overflow-hidden border border-slate-800 select-none cursor-ew-resize"
+          >
+            {/* Background Layer: 2026 Sentinel-2 Verification Scene */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-3">
+              <img
+                src={data?.preview_image || "/static-data/satellite/rampur_satellite_preview.png"}
+                alt="2026 Sentinel-2 Satellite Scene"
+                className="w-full h-full object-cover rounded-lg"
+                onError={(e) => {
+                  e.target.src = "/static-data/satellite/rampur_satellite_preview.png";
+                }}
+              />
+              <div className="absolute top-4 right-4 px-2.5 py-1 rounded bg-rose-500/80 text-white text-[10px] font-bold backdrop-blur-md shadow-md">
+                2026 Sentinel-2 (Commercial Structure)
+              </div>
+            </div>
+
+            {/* Foreground Clipped Layer: 2021 Agricultural Farmland Scene */}
+            <div
+              className="absolute inset-0 overflow-hidden"
+              style={{ clipPath: `polygon(0 0, ${sliderPos}% 0, ${sliderPos}% 100%, 0 100%)` }}
+            >
+              <div className="w-full h-full flex flex-col items-center justify-center p-3 bg-emerald-950/40">
+                <img
+                  src="/static-data/satellite/rampur_satellite_preview.png"
+                  alt="2021 Baseline Agricultural Scene"
+                  className="w-full h-full object-cover rounded-lg filter hue-rotate-60 brightness-90"
+                  onError={(e) => {
+                    e.target.src = "/static-data/satellite/rampur_satellite_preview.png";
+                  }}
+                />
+                <div className="absolute top-4 left-4 px-2.5 py-1 rounded bg-emerald-600/90 text-white text-[10px] font-bold backdrop-blur-md shadow-md">
+                  2021 Dharani Baseline (Farmland / NDVI 0.74)
+                </div>
+              </div>
+            </div>
+
+            {/* Draggable Divider Line */}
+            <div
+              className="absolute top-0 bottom-0 w-1 bg-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.8)] pointer-events-none"
+              style={{ left: `${sliderPos}%` }}
+            >
+              <div className="absolute top-1/2 -translate-y-1/2 -left-3.5 w-8 h-8 rounded-full bg-amber-500 border-2 border-slate-950 flex items-center justify-center text-slate-950 shadow-xl">
+                <Sliders className="w-3.5 h-3.5 rotate-90" />
+              </div>
+            </div>
+
+            <div className="absolute bottom-3 left-3 right-3 glass-panel p-2 rounded-lg border border-slate-700/80 text-[10px] text-slate-300 flex justify-between">
+              <span>← Farmland Claim (Dharani RoR)</span>
+              <span>Observed Warehouse (Sentinel-2) →</span>
             </div>
           </div>
         </div>

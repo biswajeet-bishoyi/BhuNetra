@@ -182,6 +182,14 @@ async def upload_document(file: UploadFile = File(...), db: Session = Depends(ge
 
     fhash = _file_hash(data)
 
+    # Persist file bytes to disk
+    data_dir = Path(__file__).parent.parent.parent / "data"
+    uploads_dir = data_dir / "uploads"
+    uploads_dir.mkdir(parents=True, exist_ok=True)
+    file_path = uploads_dir / f"{fhash}_{file.filename}"
+    if not file_path.exists():
+        file_path.write_bytes(data)
+
     # Duplicate detection: if this exact file was already uploaded, return it instead.
     existing = db.query(Document).filter(Document.file_hash == fhash).first()
     if existing:
@@ -269,19 +277,23 @@ def extract_document(doc_id: int, passes: str = Query("auto"), db: Session = Dep
     except ImportError:
         from backend.services import extraction_service as ex
 
-    # Read the file bytes from static storage
+    # Read the file bytes from uploads or static storage
     data_dir = Path(__file__).parent.parent.parent / "data"
-    scan_path = data_dir / "synthetic" / "registry_scans" / doc.source_filename
-    # Fallback: check if it's in the scan folder with a predictable name
+    scan_path = data_dir / "uploads" / f"{doc.file_hash}_{doc.source_filename}"
     if not scan_path.exists():
         scan_path = data_dir / "synthetic" / "registry_scans" / doc.source_filename
+    if not scan_path.exists():
+        # Check any matching file in synthetic scans
+        matches = list((data_dir / "synthetic" / "registry_scans").glob(f"*{doc.source_filename}*"))
+        if matches:
+            scan_path = matches[0]
+
     if not scan_path.exists():
         raise HTTPException(
             status_code=422,
             detail=(
-                f"Cannot locate scan file '{doc.source_filename}' in data/synthetic/registry_scans/. "
-                "The document was registered but the source file is not on disk. "
-                "Upload the file directly to trigger real extraction."
+                f"Cannot locate scan file '{doc.source_filename}'. "
+                "Please upload the deed scan again."
             ),
         )
 

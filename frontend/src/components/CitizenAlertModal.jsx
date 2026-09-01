@@ -27,18 +27,53 @@ export default function CitizenAlertModal({ isOpen, onClose, selectedParcelId = 
     }
   };
 
-  const handleDispatch = () => {
+  const handleDispatch = async () => {
     setDispatching(true);
-    setTimeout(() => {
+    try {
+      const endpoint =
+        activeChannel === 'whatsapp'
+          ? '/api/alerts/whatsapp/dispatch'
+          : '/api/alerts/sms/dispatch';
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          parcel_id: selectedParcelId,
+          template: selectedTemplate,
+          phone: '+919848000000',   // masked simulation number
+          owner_name: 'Pattadar',
+        }),
+      });
+      if (!res.ok) {
+        throw new Error(`Server error ${res.status}`);
+      }
+      const receipt = await res.json();
+      const newAlert = {
+        id: receipt.message_id || Date.now(),
+        channel: activeChannel,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        text: activeChannel === 'whatsapp'
+          ? templates[selectedTemplate].whatsapp
+          : templates[selectedTemplate].sms,
+        status: receipt.status,
+        messageId: receipt.message_id,
+      };
+      setSentAlerts(prev => [newAlert, ...prev]);
+    } catch (err) {
+      // Fall back to a simulated entry on network errors so the demo flow continues
       const newAlert = {
         id: Date.now(),
         channel: activeChannel,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        text: activeChannel === 'whatsapp' ? templates[selectedTemplate].whatsapp : templates[selectedTemplate].sms
+        text: activeChannel === 'whatsapp'
+          ? templates[selectedTemplate].whatsapp
+          : templates[selectedTemplate].sms,
+        status: 'FAILED',
       };
-      setSentAlerts([newAlert, ...sentAlerts]);
+      setSentAlerts(prev => [newAlert, ...prev]);
+    } finally {
       setDispatching(false);
-    }, 600);
+    }
   };
 
   return (
@@ -163,6 +198,38 @@ export default function CitizenAlertModal({ isOpen, onClose, selectedParcelId = 
             <span>{dispatching ? 'Sending Alert...' : 'Simulate Send Alert'}</span>
           </button>
         </div>
+
+        {/* Recent dispatch receipts */}
+        {sentAlerts.length > 0 && (
+          <div className="mt-4">
+            <div className="text-[10px] uppercase font-bold text-slate-400 mb-2 flex items-center gap-1.5">
+              <Bell className="w-3 h-3" />
+              <span>Recent Dispatch Receipts</span>
+            </div>
+            <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+              {sentAlerts.map(a => (
+                <div key={a.id} className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-[10px] text-slate-400 shrink-0">{a.time}</span>
+                    <span className="text-[10px] font-bold text-amber-300 uppercase">{a.channel}</span>
+                  </div>
+                  <span
+                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${
+                      a.status === 'DISPATCHED'
+                        ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                        : a.status === 'FAILED'
+                        ? 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+                        : 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                    }`}
+                    title={a.messageId ? `id: ${a.messageId}` : ''}
+                  >
+                    {a.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

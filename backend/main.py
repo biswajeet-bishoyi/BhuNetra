@@ -23,7 +23,8 @@ from routers import (
     certificate,
     auth,
     analytics,
-    mutations
+    mutations,
+    alerts
 )
 
 # Initialize DB tables
@@ -57,6 +58,8 @@ app.include_router(documents.router, prefix="/api")
 app.include_router(certificate.router, prefix="/api")
 app.include_router(auth.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
+app.include_router(alerts.router, prefix="/api")
+app.include_router(alerts.router)
 
 # Also include routes without /api prefix for backward compatibility
 app.include_router(ocr.router)

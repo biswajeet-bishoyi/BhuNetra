@@ -8,17 +8,18 @@ import React, { useState } from 'react';
 import { PencilLine, CheckCircle2, AlertTriangle, XCircle, ShieldAlert } from 'lucide-react';
 
 const FIELD_LABELS = {
-  deed_registration_no: 'Deed Registration No.',
+  khasra_no: 'Khasra Number (खसरा संख्या)',
   survey_no: 'Survey / Sub-division No.',
-  khatian_no: 'Khatian / Passbook No.',
-  ulpin: 'ULPIN',
-  owner_name: 'Pattadar (Recorded Owner)',
-  father_or_husband: 'Father / Husband Name',
-  village: 'Village',
-  mandal: 'Mandal',
-  district: 'District',
-  claimed_area_sqm: 'Recorded Extent (sq.m)',
-  land_use_claim: 'Land Classification',
+  khatian_no: 'Khata / Khatian No. (खाता/खतौनी)',
+  deed_registration_no: 'Deed Registration No. (पंजीकरण सं.)',
+  ulpin: 'ULPIN / Unique Land Parcel ID',
+  owner_name: 'Pattadar / Owner Name (खातेदार)',
+  father_or_husband: 'Father / Husband Name (पिता/पति)',
+  village: 'Village (ग्राम/मौजा)',
+  mandal: 'Tehsil / Mandal (तहसील)',
+  district: 'District (जिला)',
+  claimed_area_sqm: 'Recorded Extent (sq.m / रकबा)',
+  land_use_claim: 'Land Classification (भूमि वर्गीकरण)',
 };
 
 export default function DocumentReviewPanel({ docId, extractionResult, onSubmit, onCancel }) {
@@ -41,7 +42,7 @@ export default function DocumentReviewPanel({ docId, extractionResult, onSubmit,
     setSubmitting(true);
     try {
       const correctionList = Object.entries(corrections)
-        .filter(([, v]) => v !== fields[key]?.value && v !== undefined)
+        .filter(([k, v]) => v !== fields[k]?.value && v !== undefined)
         .map(([key, value]) => ({ field_key: key, corrected_value: value }));
 
       const res = await fetch(`/api/documents/${docId}/review`, {

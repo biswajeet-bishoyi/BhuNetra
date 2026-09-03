@@ -1,9 +1,31 @@
 import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, GeoJSON, Tooltip } from 'react-leaflet';
-import { ShieldAlert, AlertCircle, CheckCircle, Scale, ArrowRight, Activity, MapPin, Sliders, Lock, FileText, Volume2, BellRing, Smartphone, MessageSquare } from 'lucide-react';
+import { MapContainer, TileLayer, GeoJSON, Tooltip, useMap } from 'react-leaflet';
+import { ShieldAlert, AlertCircle, CheckCircle, Scale, ArrowRight, Activity, MapPin, Sliders, Lock, FileText, Volume2, BellRing, Smartphone, MessageSquare, Sparkles } from 'lucide-react';
 import VoiceAssistant from './VoiceAssistant';
 import LandHealthCard from './LandHealthCard';
 import CitizenAlertModal from './CitizenAlertModal';
+
+function MapRecenter({ selectedParcel }) {
+  const map = useMap();
+  useEffect(() => {
+    if (selectedParcel?.geometry?.coordinates) {
+      try {
+        const coords = selectedParcel.geometry.coordinates[0];
+        if (coords && coords.length > 0) {
+          const lats = coords.map(c => c[1]);
+          const lngs = coords.map(c => c[0]);
+          const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+          const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+          const center = [(minLat + maxLat) / 2, (minLng + maxLng) / 2];
+          map.flyTo(center, 18, { duration: 1.2 });
+        }
+      } catch (e) {
+        console.error("Map center error", e);
+      }
+    }
+  }, [selectedParcel, map]);
+  return null;
+}
 
 export default function MapViewer({ parcelsData, selectedParcel, setSelectedParcel, onSelectTab, selectedRole }) {
   const [riskEnsemble, setRiskEnsemble] = useState(null);
@@ -40,6 +62,17 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
     const pid = props.parcel_id;
     const isAnomalous = props.is_anomalous;
     const isSelected = selectedParcel?.properties?.parcel_id === pid;
+    const isUploaded = props.is_uploaded_plot;
+
+    if (isUploaded) {
+      return {
+        color: "#06b6d4", // Electric cyan
+        weight: isSelected ? 4.5 : 3,
+        fillColor: "#06b6d4",
+        fillOpacity: isSelected ? 0.85 : 0.65,
+        dashArray: isSelected ? "" : "4, 4"
+      };
+    }
 
     let color = "#10b981"; // Green
     let fillColor = "#10b981";
@@ -115,8 +148,17 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
         <div className="absolute top-4 left-4 z-[1000] glass-panel px-3.5 py-2 rounded-xl border border-slate-700/80 shadow-2xl flex items-center gap-3 bg-slate-900/95 backdrop-blur-md">
           <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shrink-0"></div>
           <div>
-            <h3 className="text-xs font-bold text-slate-100">Shamshabad Cadastral Spatial Map</h3>
-            <p className="text-[10px] text-slate-400">Telangana Dharani Cadastre • In-Memory GeoPandas / Shapely</p>
+            <h3 className="text-xs font-bold text-slate-100 flex items-center gap-2">
+              <span>{selectedParcel?.properties?.village || 'Bhubaneswar'} ({selectedParcel?.properties?.district || 'Khordha'}) Cadastral Map</span>
+              {selectedParcel?.properties?.khasra_no && (
+                <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono text-[10px] border border-amber-500/40">
+                  Khasra {selectedParcel.properties.khasra_no}
+                </span>
+              )}
+            </h3>
+            <p className="text-[10px] text-slate-400">
+              {selectedParcel?.properties?.cadastre_authority || (selectedParcel?.properties?.state === 'Odisha' ? 'Odisha Bhulekh Cadastre' : (selectedParcel?.properties?.state?.includes('Delhi') ? 'Delhi DORIS Cadastre' : 'Telangana Dharani Cadastre'))} • Live GeoPandas / Shapely Spatial Index
+            </p>
           </div>
         </div>
 
@@ -145,7 +187,11 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
         </div>
 
         {/* Risk Legend Overlay */}
-        <div className="absolute bottom-4 left-4 z-[1000] glass-panel px-3 py-2 rounded-xl border border-slate-700/80 shadow-2xl flex items-center gap-4 text-xs font-medium bg-slate-900/95 backdrop-blur-md">
+        <div className="absolute bottom-4 left-4 z-[1000] glass-panel px-3 py-2 rounded-xl border border-slate-700/80 shadow-2xl flex flex-wrap items-center gap-3 text-xs font-medium bg-slate-900/95 backdrop-blur-md">
+          <div className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded bg-cyan-400 shadow-[0_0_8px_#06b6d4]"></span>
+            <span className="text-cyan-300 font-bold">Uploaded Plot</span>
+          </div>
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded bg-emerald-500"></span>
             <span className="text-slate-300">Clean / Verified</span>
@@ -167,6 +213,7 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
             style={{ width: '100%', height: '100%' }}
             zoomControl={true}
           >
+            <MapRecenter selectedParcel={selectedParcel} />
             {mapLayer === 'satellite' ? (
               <TileLayer
                 attribution='&copy; <a href="https://www.esri.com/">Esri</a>, Maxar, Earthstar Geographics'
@@ -181,7 +228,7 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
               />
             )}
             <GeoJSON
-              key={`${JSON.stringify(parcelsData)}-${mapLayer}`}
+              key={`${JSON.stringify(parcelsData)}-${mapLayer}-${selectedParcel?.properties?.parcel_id}`}
               data={parcelsData}
               style={getParcelStyle}
               onEachFeature={onEachFeature}
@@ -201,15 +248,41 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
             {/* Header: Parcel ID & Risk Badge */}
             <div className="flex items-start justify-between border-b border-slate-800 pb-3">
               <div>
+                {selectedParcel.properties.is_uploaded_plot && (
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 text-cyan-400" />
+                      Uploaded Property Paper Plot
+                    </span>
+                  </div>
+                )}
                 <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">
-                  {selectedParcel.properties.village || 'Shamshabad'}, Telangana
+                  {selectedParcel.properties.village || 'Chandrasekharpur'}, {selectedParcel.properties.mandal || selectedParcel.properties.district || 'Khordha'}, {selectedParcel.properties.state || 'Odisha'}
                 </span>
                 <h2 className="text-xl font-extrabold text-slate-100 mt-0.5">
                   Parcel {selectedParcel.properties.parcel_id}
                 </h2>
-                <p className="text-xs text-slate-400">
-                  Survey No. {selectedParcel.properties.survey_no} • Khatian {selectedParcel.properties.khatian_no}
-                </p>
+                <div className="flex flex-wrap items-center gap-2 mt-1">
+                  <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-mono text-xs font-bold border border-amber-500/40 shadow-sm">
+                    Khasra No: {selectedParcel.properties.khasra_no || selectedParcel.properties.survey_no || 'N/A'}
+                  </span>
+                  {selectedParcel.properties.khatian_no && (
+                    <span className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 font-mono text-xs border border-slate-700">
+                      Khata: {selectedParcel.properties.khatian_no}
+                    </span>
+                  )}
+                </div>
+                {selectedParcel.properties.cadastre_authority && (
+                  <p className="text-[11px] text-emerald-400 font-medium mt-0.5 flex items-center gap-1">
+                    <span>🏛️</span>
+                    <span>{selectedParcel.properties.cadastre_authority}</span>
+                  </p>
+                )}
+                {selectedParcel.properties.source_filename && (
+                  <p className="text-[10px] text-cyan-400/90 mt-1 font-mono">
+                    Doc: {selectedParcel.properties.source_filename}
+                  </p>
+                )}
               </div>
 
               {riskEnsemble && (
@@ -247,8 +320,11 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
                 </div>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800">
-                <span className="text-slate-400 text-[10px] uppercase font-semibold">Dharani Claimed Extent</span>
-                <p className="font-bold text-slate-200 mt-0.5">{selectedParcel.properties.claimed_area_sqm} sqm</p>
+                <span className="text-slate-400 text-[10px] uppercase font-semibold">Claimed Extent</span>
+                <p className="font-bold text-slate-200 mt-0.5">
+                  {selectedParcel.properties.claimed_area_sqm} sqm
+                  {selectedParcel.properties.area_acres_printed ? ` (${selectedParcel.properties.area_acres_printed})` : ''}
+                </p>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800">
                 <span className="text-slate-400 text-[10px] uppercase font-semibold">GIS Actual Extent</span>

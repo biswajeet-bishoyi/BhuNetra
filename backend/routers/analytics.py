@@ -179,8 +179,14 @@ def mandal_stats(db: Session = Depends(get_db)):
         # Top anomalies by engine score
         anomalies = []
         for r in rows:
-            for k, v in r["engine_scores"].items():
-                if v >= 30:
+            eng_scores = r.get("engine_scores") or {
+                "gis": r.get("gis_score", 0),
+                "ownership": r.get("ownership_score", 0),
+                "satellite": r.get("satellite_score", 0),
+                "ocr": r.get("ocr_score", 0)
+            }
+            for k, v in eng_scores.items():
+                if v and v >= 30:
                     anomalies.append((k, v))
         counter = Counter([a[0] for a in anomalies])
         top_anomalies = [{"type": k, "count": v} for k, v in counter.most_common(3)]

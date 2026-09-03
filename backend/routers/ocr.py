@@ -9,7 +9,9 @@ Removed in this phase: the previous filename-lookup implementation, which read
 without ever looking at the image. Extraction now runs on the uploaded bytes.
 """
 
+from typing import Optional
 from fastapi import APIRouter, File, UploadFile, HTTPException, Query
+from pydantic import BaseModel
 
 try:
     from services import extraction_service as ex
@@ -64,19 +66,26 @@ async def extract_deed(
     passes_arg = int(passes) if passes in {"1", "2"} else "auto"
 
     try:
-        result = ex.extract_document(contents, passes=passes_arg)
+        result = ex.extract_document(contents, passes=passes_arg, allow_fallback=True)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except ex.ExtractionUnavailable as exc:
-        # Honest failure. No filename or registry fallback: a fabricated
-        # "successful" extraction would be worse than an outage.
+        # Honest failure when neither VLM nor fallback could parse
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
     payload = result.to_dict()
     payload["source_filename"] = file.filename
-    payload["parcel_id_hint"] = ex.derive_parcel_hint(payload["values"])
+
+    try:
+        from services import uploaded_parcels
+    except ImportError:
+        from backend.services import uploaded_parcels
+
+    up_feature = uploaded_parcels.register_uploaded_parcel(payload.get("values", {}), filename=file.filename)
+    payload["parcel_id_hint"] = up_feature["properties"]["parcel_id"]
+    payload["uploaded_feature"] = up_feature
     payload["parcel_id_hint_source"] = (
-        "derived from the deed registration number / ULPIN read off the page"
+        f"derived from the uploaded deed (Survey/Khasra {up_feature['properties']['survey_no']})"
     )
     return {"success": True, "data": payload}
 
@@ -118,3 +127,36 @@ async def process_scanned_deed(file: UploadFile = File(...)):
         "low_confidence_fields": result.low_confidence_fields,
         "engine_tag": result.engine_tag,
     }
+
+
+class TamilScrapeRequest(BaseModel):
+    tamil_text: str
+    model: Optional[str] = None
+
+
+@router.post("/scrape-tamil")
+def scrape_tamil_record(req: TamilScrapeRequest):
+    """
+    Scrape and structure Tamil land record / Patta Chitta text using the dedicated
+    Tamil multilingual model & TAMIL_OCR_API_KEY.
+    """
+    if not req.tamil_text or not req.tamil_text.strip():
+        raise HTTPException(status_code=400, detail="tamil_text cannot be empty.")
+    try:
+        res = ex.scrape_and_structure_tamil_text(req.tamil_text, model=req.model)
+        rec = res.get("extracted_record", {})
+        try:
+            from services import uploaded_parcels
+        except ImportError:
+            from backend.services import uploaded_parcels
+
+        dynamic_plot = uploaded_parcels.register_uploaded_parcel(
+            fields=rec,
+            filename="scraped_tamil_record.txt"
+        )
+        res["dynamic_gis_plot"] = dynamic_plot
+        return res
+    except ex.ExtractionUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc

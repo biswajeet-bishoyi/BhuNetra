@@ -14,7 +14,20 @@ _BUILT_UP_NDVI_THRESHOLD = 0.35              # NDVI below this suggests non-vege
 
 
 def _load_parcel_land_use(parcel_id: str) -> dict:
-    """Read a parcel's land_use_claim from the GeoJSON registry."""
+    """Read a parcel's land_use_claim from the GeoJSON registry or uploaded parcels."""
+    try:
+        from services import uploaded_parcels
+    except ImportError:
+        from backend.services import uploaded_parcels
+    up = uploaded_parcels.get_uploaded_parcel(parcel_id)
+    if up:
+        prop = up["properties"]
+        return {
+            "claimed_use": str(prop.get("land_use_claim", "Residential")),
+            "claimed_area_sqm": float(prop.get("claimed_area_sqm") or 26.75),
+            "actual_area_sqm": float(prop.get("actual_area_sqm") or 26.75),
+        }
+
     geojson_path = os.path.join(
         os.path.dirname(__file__), "..", "..", "data", "synthetic", "parcels.geojson"
     )

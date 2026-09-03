@@ -56,6 +56,7 @@ class ExtractResponse(BaseModel):
     fields: dict | None = None
     extracted_fields: dict | None = None
     raw_text: str | None = None
+    uploaded_feature: dict | None = None
 
 
 class OfficerCorrection(BaseModel):
@@ -458,13 +459,22 @@ def extract_document(doc_id: int, passes: str = Query("auto"), db: Session = Dep
 
     try:
         passes_arg = int(passes) if passes in {"1", "2"} else "auto"
-        result = ex.extract_document(raw_bytes, passes=passes_arg)
+        result = ex.extract_document(raw_bytes, passes=passes_arg, allow_fallback=True)
     except ex.ExtractionUnavailable as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
     # Persist the extraction result
     result_dict = result.to_dict()
-    parcel_hint = ex.derive_parcel_hint(result_dict.get("values", {}))
+
+    try:
+        from services import uploaded_parcels
+    except ImportError:
+        from backend.services import uploaded_parcels
+
+    up_feature = uploaded_parcels.register_uploaded_parcel(
+        result_dict.get("values", {}), doc_id=doc.id, filename=doc.source_filename
+    )
+    parcel_hint = up_feature["properties"]["parcel_id"]
     corrections: dict[str, str] = {}  # empty for a fresh extraction
 
     doc.status = result.status          # EXTRACTED or NEEDS_REVIEW
@@ -491,6 +501,7 @@ def extract_document(doc_id: int, passes: str = Query("auto"), db: Session = Dep
         engine_tag=result.engine_tag,
         passes=result.passes,
         timing_ms=result.timing_ms,
+        uploaded_feature=up_feature,
     )
 
 

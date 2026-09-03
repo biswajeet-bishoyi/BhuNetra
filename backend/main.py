@@ -1,6 +1,18 @@
 import sys
 import os
 import threading
+from pathlib import Path
+
+# Automatically load .env before anything else
+try:
+    from dotenv import load_dotenv
+    _project_root = Path(__file__).resolve().parent.parent
+    if (_project_root / ".env").exists():
+        load_dotenv(_project_root / ".env")
+    elif (Path(__file__).resolve().parent / ".env").exists():
+        load_dotenv(Path(__file__).resolve().parent / ".env")
+except Exception:
+    pass
 
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -24,7 +36,9 @@ from routers import (
     auth,
     analytics,
     mutations,
-    alerts
+    alerts,
+    parcels,
+    agents
 )
 
 # Initialize DB tables
@@ -59,6 +73,7 @@ app.include_router(certificate.router, prefix="/api")
 app.include_router(auth.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
 app.include_router(alerts.router, prefix="/api")
+app.include_router(parcels.router, prefix="/api")
 app.include_router(alerts.router)
 
 # Also include routes without /api prefix for backward compatibility
@@ -76,6 +91,8 @@ app.include_router(auth.router)
 app.include_router(analytics.router)
 app.include_router(mutations.router)
 app.include_router(mutations.router, prefix="/api")
+app.include_router(parcels.router)
+app.include_router(agents.router)
 
 # Serve synthetic scan files and satellite images
 data_dir = os.path.join(os.path.dirname(__file__), "..", "data")

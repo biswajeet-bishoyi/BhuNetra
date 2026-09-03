@@ -8,6 +8,7 @@ fastapi==0.136.0
 uvicorn==0.45.0
 python-multipart==0.0.27
 pydantic==2.13.3
+python-dotenv==1.2.3
 
 SQLAlchemy==2.0.49
 
@@ -23,6 +24,8 @@ scikit-learn==1.9.0
 # Extraction engine transport (Ollama HTTP API) + image preprocessing
 httpx==0.28.1
 Pillow==12.1.1
+openai==3.8.0
+agno==3.0.5
 
 # Auth (Phase 9)
 passlib==1.7.4

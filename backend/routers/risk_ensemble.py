@@ -22,6 +22,15 @@ def compute_fraud_risk_ensemble(
     Weights: GIS 35% | Ownership Intelligence 25% | Satellite 25% | OCR Confidence 15%.
     Thresholds: Green (<30.0) | Yellow (30.0 - 64.9) | Red (>=65.0).
     """
+    try:
+        from services import uploaded_parcels
+    except ImportError:
+        from backend.services import uploaded_parcels
+
+    up_risk = uploaded_parcels.compute_uploaded_risk_ensemble(parcel_id, role=role)
+    if up_risk:
+        return up_risk
+
     # 1. Fetch parcel GIS details (Engine 2)
     geojson_path = os.path.join(os.path.dirname(__file__), "..", "..", "data", "synthetic", "parcels.geojson")
     if not os.path.exists(geojson_path):

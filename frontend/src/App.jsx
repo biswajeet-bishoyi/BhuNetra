@@ -69,12 +69,21 @@ export default function App() {
     }
   };
 
-  const handleSelectParcelById = (pid) => {
-    if (parcelsData && parcelsData.features) {
-      const target = parcelsData.features.find(f => f.properties.parcel_id === pid);
-      if (target) {
-        setSelectedParcel(target);
+  const handleSelectParcelById = async (pid, customFeature) => {
+    try {
+      const res = await fetch('/api/gis-check/');
+      if (res.ok) {
+        const json = await res.json();
+        setParcelsData(json);
+        const target = (json.features && json.features.find(f => f.properties.parcel_id === pid)) || customFeature;
+        if (target) {
+          setSelectedParcel(target);
+        }
+      } else if (customFeature) {
+        setSelectedParcel(customFeature);
       }
+    } catch (e) {
+      if (customFeature) setSelectedParcel(customFeature);
     }
     setActiveTab('map');
   };

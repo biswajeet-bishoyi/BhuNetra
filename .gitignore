@@ -19,8 +19,13 @@ dist-ssr/
 .env
 .env.*
 !.env.example
+backend/.env
+backend/.env.*
 *.pem
 *.key
+*.log
+doc4_*.txt
+tmp/
 
 # --- Generated runtime state ---
 # Generated upload storage

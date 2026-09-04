@@ -371,19 +371,6 @@ export default function Header({
             <span className="hidden sm:inline">Demo Tour</span>
           </button>
 
-          {/* Odisha Bhulekh RoR Intelligence Trigger */}
-          {onOpenOdishaModal && (
-            <button
-              onClick={onOpenOdishaModal}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition cursor-pointer shadow-sm shadow-emerald-950/30"
-              title="Query Odisha Bhulekh Record of Rights (bhulekh.ori.nic.in)"
-            >
-              <span>📜</span>
-              <span className="hidden sm:inline">Odisha RoR (ଭୂଲେଖ)</span>
-              <span className="sm:hidden">Odisha</span>
-            </button>
-          )}
-
           {/* User Profile & Auth State */}
           {currentUser ? (
             <div className="flex items-center gap-2 pl-1.5 border-l border-slate-800">

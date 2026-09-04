@@ -71,12 +71,23 @@ def run_paddle_ocr(raw_bytes: bytes, lang: str = "en") -> Dict[str, Any]:
     """
     t0 = time.perf_counter()
     
-    # Load and normalize image
+    # Load and normalize image or PDF page
     try:
-        img = Image.open(io.BytesIO(raw_bytes))
-        img = ImageOps.exif_transpose(img).convert("RGB")
+        img = None
+        if raw_bytes.startswith(b"%PDF") or b"%PDF-" in raw_bytes[:1024]:
+            try:
+                import pypdfium2 as pdfium
+                pdf = pdfium.PdfDocument(raw_bytes)
+                if len(pdf) > 0:
+                    img = pdf[0].render(scale=2.0).to_pil().convert("RGB")
+            except Exception:
+                pass
+
+        if img is None:
+            img = Image.open(io.BytesIO(raw_bytes))
+            img = ImageOps.exif_transpose(img).convert("RGB")
     except Exception as exc:
-        raise ValueError(f"Unreadable image for PaddleOCR: {exc}") from exc
+        raise ValueError(f"Unreadable image or PDF for PaddleOCR: {exc}") from exc
 
     # Convert PIL Image to numpy array for PaddleOCR
     import numpy as np

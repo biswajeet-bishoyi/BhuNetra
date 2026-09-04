@@ -268,26 +268,42 @@ def _encode_png(img: Image.Image) -> str:
 
 
 def preprocess_image(raw: bytes, denoise: bool = False) -> Tuple[str, Dict[str, Any]]:
-    """Normalize an uploaded scan and return (base64 PNG, metadata).
+    """Normalize an uploaded scan or PDF document and return (base64 PNG, metadata).
 
+    Handles PNG, JPG, TIFF, WEBP, and multi-page / single-page PDF files.
     Downscaling to MAX_EDGE keeps the vision tower inside 6 GB of VRAM; EXIF
     transpose fixes phone-camera captures that are rotated by metadata only.
-
-    `denoise` applies a 3x3 median filter. Heavy per-pixel sensor grain — the kind
-    a real flatbed produces on an old, creased record — can destabilise the vision
-    encoder into emitting a degenerate token stream (see `_looks_corrupted`). A
-    median filter suppresses that grain while preserving glyph edges, which is what
-    production scanner pipelines do before OCR anyway. It is applied on retry
-    rather than always, so clean pages are never softened unnecessarily.
     """
-    try:
-        img = Image.open(io.BytesIO(raw))
-        img.load()
-    except Exception as exc:  # noqa: BLE001 - any decode failure is a client error
-        raise ValueError(f"Unreadable image file: {exc}") from exc
+    img = None
+    meta: Dict[str, Any] = {}
 
-    meta = {"original_size": list(img.size), "original_mode": img.mode}
-    img = ImageOps.exif_transpose(img).convert("RGB")
+    # 1. Handle PDF uploads via pypdfium2
+    if raw.startswith(b"%PDF") or b"%PDF-" in raw[:1024]:
+        try:
+            import pypdfium2 as pdfium
+            pdf = pdfium.PdfDocument(raw)
+            if len(pdf) == 0:
+                raise ValueError("Uploaded PDF contains 0 pages.")
+            page = pdf[0]
+            # Render page at 2.0 scale (approx 150-200 DPI) for crisp character recognition
+            pil_img = page.render(scale=2.0).to_pil().convert("RGB")
+            img = pil_img
+            meta["is_pdf"] = True
+            meta["pdf_page_count"] = len(pdf)
+            meta["original_size"] = list(img.size)
+            meta["original_mode"] = img.mode
+        except Exception as pdf_err:
+            raise ValueError(f"Unreadable PDF file: {pdf_err}") from pdf_err
+
+    # 2. Handle standard image files
+    if img is None:
+        try:
+            img = Image.open(io.BytesIO(raw))
+            img.load()
+            meta = {"original_size": list(img.size), "original_mode": img.mode}
+            img = ImageOps.exif_transpose(img).convert("RGB")
+        except Exception as exc:  # noqa: BLE001 - any decode failure is a client error
+            raise ValueError(f"Unreadable image file: {exc}") from exc
 
     longest = max(img.size)
     if longest > MAX_EDGE:

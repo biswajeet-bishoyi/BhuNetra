@@ -405,19 +405,31 @@ export default function OCRScanner({ onSelectParcel }) {
           {!previewUrl ? (
             <label className="flex-1 min-h-[360px] border-2 border-dashed border-slate-700 hover:border-amber-500/50 rounded-xl flex flex-col items-center justify-center p-6 cursor-pointer bg-slate-900/40 hover:bg-slate-900/80 transition group">
               <Upload className="w-10 h-10 text-slate-500 group-hover:text-amber-400 transition mb-3" />
-              <p className="text-sm font-bold text-slate-300">Drop a scanned deed image here or click to browse</p>
-              <p className="text-xs text-slate-500 mt-1">PNG, JPG, TIFF, WEBP · printed or handwritten RoR pages</p>
-              <p className="text-[10px] text-slate-600 mt-2">
-                Any land-record page works — the model reads the image, not the filename.
-              </p>
-              <input type="file" onChange={handleFileUpload} accept="image/*" className="hidden" />
+              <p className="text-sm font-bold text-slate-300">Drop a scanned deed or PDF document here</p>
+              <p className="text-xs text-slate-500 mt-1">PDF, PNG, JPG, TIFF, WEBP · printed or handwritten RoR pages</p>
+              <div className="flex items-center gap-2 mt-2">
+                <span className="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-bold">📄 PDF Supported</span>
+                <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">🖼️ High-Res Scans</span>
+              </div>
+              <input type="file" onChange={handleFileUpload} accept="image/*,.pdf,application/pdf" className="hidden" />
             </label>
           ) : (
             <div className="relative flex-1 min-h-[360px] bg-slate-950 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center p-3">
-              <img src={previewUrl} alt="Deed scan preview" className="max-h-[420px] object-contain rounded-lg shadow-xl" />
+              {previewUrl.toLowerCase().includes('.pdf') || previewUrl.startsWith('blob:') && previewUrl.includes('pdf') ? (
+                <div className="w-full h-full min-h-[400px] flex flex-col items-center justify-center bg-slate-900/90 rounded-lg p-4 text-center space-y-3">
+                  <FileText className="w-16 h-16 text-rose-400 animate-pulse" />
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-200">PDF Land Document Loaded</h4>
+                    <p className="text-xs text-slate-400 mt-1">Multi-page Indic OCR & pypdfium2 Rasterizer active</p>
+                  </div>
+                  <iframe src={previewUrl} title="PDF Preview" className="w-full h-[320px] rounded-lg border border-slate-800 bg-white" />
+                </div>
+              ) : (
+                <img src={previewUrl} alt="Deed scan preview" className="max-h-[420px] object-contain rounded-lg shadow-xl" />
+              )}
               <button
                 onClick={() => { setPreviewUrl(null); setResult(null); setError(null); setEdits({}); setStep(null); setLifecycleHash(null); setLifecycleDocId(null); }}
-                className="absolute top-4 right-4 px-3 py-1.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-xs font-bold text-slate-300 border border-slate-700"
+                className="absolute top-4 right-4 px-3 py-1.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-xs font-bold text-slate-300 border border-slate-700 cursor-pointer shadow-lg z-10"
               >
                 Clear / Upload Another
               </button>

@@ -131,10 +131,22 @@ def call_ocr_space_api(
     key = api_key or OCR_SPACE_API_KEY
     endpoint = OCR_SPACE_ENDPOINT
 
-    # Preprocess image to optimal dimensions
+    # Preprocess image or PDF document to optimal dimensions
     try:
-        img = Image.open(io.BytesIO(image_bytes))
-        img = ImageOps.exif_transpose(img).convert("RGB")
+        img = None
+        if image_bytes.startswith(b"%PDF") or b"%PDF-" in image_bytes[:1024]:
+            try:
+                import pypdfium2 as pdfium
+                pdf = pdfium.PdfDocument(image_bytes)
+                if len(pdf) > 0:
+                    img = pdf[0].render(scale=2.0).to_pil().convert("RGB")
+            except Exception:
+                pass
+
+        if img is None:
+            img = Image.open(io.BytesIO(image_bytes))
+            img = ImageOps.exif_transpose(img).convert("RGB")
+
         max_dim = 1800
         if max(img.size) > max_dim:
             scale = max_dim / max(img.size)

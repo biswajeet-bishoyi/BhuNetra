@@ -106,7 +106,7 @@ class BatchUploadResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 MAX_UPLOAD_BYTES = 12 * 1024 * 1024
-ALLOWED_SUFFIXES = (".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp", ".webp")
+ALLOWED_SUFFIXES = (".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp", ".webp", ".pdf")
 
 
 def _file_hash(data: bytes) -> str:

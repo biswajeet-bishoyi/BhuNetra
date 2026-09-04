@@ -21,7 +21,7 @@ except ImportError:  # running as `backend.main`
 router = APIRouter(prefix="/ocr", tags=["Engine 1 - Registry OCR"])
 
 MAX_UPLOAD_BYTES = 12 * 1024 * 1024
-ALLOWED_SUFFIXES = (".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp", ".webp")
+ALLOWED_SUFFIXES = (".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp", ".webp", ".pdf")
 
 
 async def _read_upload(file: UploadFile) -> bytes:

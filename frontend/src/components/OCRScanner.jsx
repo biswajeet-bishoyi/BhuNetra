@@ -680,60 +680,114 @@ export default function OCRScanner({ onSelectParcel }) {
             )}
           </div>
 
-          {result && (
-            <div className="pt-4 border-t border-slate-800 space-y-2.5">
-              {/* Odisha Bhulekh RoR Agent Trigger */}
-              <button
-                onClick={handleFetchOdishaBhulekh}
-                disabled={odishaLoading}
-                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-black transition shadow-lg shadow-emerald-950/40 flex items-center justify-center gap-2 cursor-pointer border border-emerald-400/30"
-              >
-                {odishaLoading ? (
-                  <>
-                    <span className="animate-spin text-sm">⏳</span>
-                    <span>Querying Odisha Bhulekh RoR with Agno AI Agent...</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-base">📜</span>
-                    <span>Fetch Odisha Bhulekh RoR (ସ୍ୱତ୍ତ୍ୱ ଲିପି / bhulekh.ori.nic.in)</span>
-                  </>
-                )}
-              </button>
+          {result && (() => {
+            // Dynamically identify the state from extracted OCR data
+            const stateVal = (result.values?.state || '').toLowerCase();
+            const distVal = (result.values?.district || '').toLowerCase();
+            const mandalVal = (result.values?.mandal || '').toLowerCase();
+            const rawVal = (result.raw_text || '').toLowerCase();
 
-              {/* UP Bhulekh Khatauni Agent Trigger */}
-              <button
-                onClick={handleFetchUPBhulekhHistory}
-                disabled={upbhulekhLoading}
-                className="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer border border-slate-700"
-              >
-                {upbhulekhLoading ? (
-                  <>
-                    <span className="animate-spin text-sm">⏳</span>
-                    <span>Querying UP Bhulekh with Agno AI Agent...</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-base">🏛️</span>
-                    <span>Fetch UP Bhulekh Khatauni (upbhulekh.gov.in)</span>
-                  </>
-                )}
-              </button>
+            let stateInfo = null;
 
-              <button
-                onClick={() => onSelectParcel(result.parcel_id_hint || 'P-4661', result.uploaded_feature)}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 text-xs font-extrabold transition shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span>🗺️</span>
-                <span>
-                  Locate & Cross-Verify {result.values?.khasra_no ? `Khasra ${result.values.khasra_no}` : (result.parcel_id_hint ? `Plot ${result.parcel_id_hint}` : 'Plot')} on GIS Map
-                </span>
-              </button>
-              <p className="text-[10px] text-slate-400 text-center">
-                Calculates exact parcel coordinates, spatial topology, and land health from the uploaded paper.
-              </p>
-            </div>
-          )}
+            if (stateVal.includes('odisha') || stateVal.includes('orissa') || stateVal.includes('ଓଡ଼ିଶା') ||
+                distVal.includes('ganjam') || distVal.includes('khordha') || distVal.includes('cuttack') || distVal.includes('puri') ||
+                rawVal.includes('ଭୂଲେଖ') || rawVal.includes('ଖତିୟାନ') || rawVal.includes('39-a')) {
+              stateInfo = {
+                key: 'odisha',
+                name: 'Odisha',
+                icon: '📜',
+                label: 'Fetch Odisha Bhulekh RoR (ସ୍ୱତ୍ତ୍ୱ ଲିପି / bhulekh.ori.nic.in)',
+                bgGradient: 'from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 shadow-emerald-950/40 border-emerald-400/30',
+                loadingText: 'Querying Odisha Bhulekh RoR with Agno AI Agent...',
+                action: handleFetchOdishaBhulekh,
+                loading: odishaLoading,
+              };
+            } else if (stateVal.includes('uttar pradesh') || stateVal.includes('up') || stateVal.includes('उत्तर प्रदेश') ||
+                distVal.includes('lucknow') || distVal.includes('varanasi') || distVal.includes('kanpur') ||
+                rawVal.includes('खसरा') || rawVal.includes('खतौनी') || rawVal.includes('upbhulekh')) {
+              stateInfo = {
+                key: 'up',
+                name: 'Uttar Pradesh',
+                icon: '🏛️',
+                label: 'Fetch UP Bhulekh Khatauni (upbhulekh.gov.in)',
+                bgGradient: 'from-indigo-600 via-blue-600 to-indigo-700 hover:from-indigo-500 hover:to-blue-500 shadow-indigo-950/40 border-indigo-400/30',
+                loadingText: 'Querying UP Bhulekh with Agno AI Agent...',
+                action: handleFetchUPBhulekhHistory,
+                loading: upbhulekhLoading,
+              };
+            } else if (stateVal.includes('telangana') || stateVal.includes('andhra') || distVal.includes('rangareddy') || mandalVal.includes('shamshabad')) {
+              stateInfo = {
+                key: 'telangana',
+                name: 'Telangana',
+                icon: '🏛️',
+                label: 'Cross-Verify via Telangana Dharani Portal (dharani.telangana.gov.in)',
+                bgGradient: 'from-cyan-600 via-sky-600 to-cyan-700 hover:from-cyan-500 hover:to-sky-500 shadow-cyan-950/40 border-cyan-400/30',
+                loadingText: 'Querying Telangana Dharani Portal...',
+                action: () => setStep('review'),
+                loading: false,
+              };
+            } else if (stateVal.includes('tamil') || distVal.includes('chennai') || distVal.includes('kanchipuram') || rawVal.includes('பட்டா')) {
+              stateInfo = {
+                key: 'tamilnadu',
+                name: 'Tamil Nadu',
+                icon: '🏛️',
+                label: 'Cross-Verify via TN e-Services (eservices.tn.gov.in)',
+                bgGradient: 'from-amber-600 via-orange-600 to-amber-700 hover:from-amber-500 hover:to-orange-500 shadow-amber-950/40 border-amber-400/30',
+                loadingText: 'Querying Tamil Nadu e-Services...',
+                action: () => setStep('review'),
+                loading: false,
+              };
+            } else {
+              const cleanStateName = result.values?.state ? String(result.values.state).split('(')[0].trim() : 'State';
+              stateInfo = {
+                key: 'general',
+                name: cleanStateName,
+                icon: '🏛️',
+                label: `Cross-Verify via ${cleanStateName} Bhulekh Portal`,
+                bgGradient: 'from-slate-800 to-slate-700 hover:from-slate-700 hover:to-slate-600 shadow-slate-950/40 border-slate-600',
+                loadingText: 'Querying Land Records Portal...',
+                action: () => setStep('review'),
+                loading: false,
+              };
+            }
+
+            return (
+              <div className="pt-4 border-t border-slate-800 space-y-2.5">
+                {/* Single State-Adaptive Land Record Verification Button */}
+                <button
+                  onClick={stateInfo.action}
+                  disabled={stateInfo.loading}
+                  className={`w-full py-3 px-4 rounded-xl bg-gradient-to-r ${stateInfo.bgGradient} text-white text-xs font-black transition shadow-lg flex items-center justify-center gap-2 cursor-pointer border`}
+                >
+                  {stateInfo.loading ? (
+                    <>
+                      <span className="animate-spin text-sm">⏳</span>
+                      <span>{stateInfo.loadingText}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-base">{stateInfo.icon}</span>
+                      <span>{stateInfo.label}</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Map Location Action Button */}
+                <button
+                  onClick={() => onSelectParcel(result.parcel_id_hint || 'P-102', result.uploaded_feature)}
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 text-xs font-extrabold transition shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>🗺️</span>
+                  <span>
+                    Locate & Cross-Verify {result.values?.khasra_no ? `Khasra ${result.values.khasra_no}` : (result.parcel_id_hint ? `Plot ${result.parcel_id_hint}` : 'Plot')} on GIS Map
+                  </span>
+                </button>
+                <p className="text-[10px] text-slate-400 text-center">
+                  Calculates exact parcel coordinates, spatial topology, and land health from the uploaded paper.
+                </p>
+              </div>
+            );
+          })()}
         </div>
       </div>
 

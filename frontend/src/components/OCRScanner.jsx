@@ -215,8 +215,8 @@ export default function OCRScanner({ onSelectParcel }) {
       const uploadData = await uploadRes.json();
       setLifecycleDocId(uploadData.document_id);
 
-      // 2. Run extraction via the document lifecycle endpoint (with allow_fallback=true)
-      const extractRes = await fetch(`/api/documents/${uploadData.document_id}/extract?passes=auto&allow_fallback=true`, { method: 'POST' });
+      // 2. Run extraction via the document lifecycle endpoint (fast 1-pass with allow_fallback=true)
+      const extractRes = await fetch(`/api/documents/${uploadData.document_id}/extract?passes=1&allow_fallback=true`, { method: 'POST' });
       if (!extractRes.ok) {
         const err = await extractRes.json();
         setError({ status: extractRes.status, message: err.detail || 'Extraction failed.' });

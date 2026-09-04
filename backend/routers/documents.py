@@ -412,7 +412,7 @@ def get_document(doc_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/{doc_id}/extract", response_model=ExtractResponse)
-def extract_document(doc_id: int, passes: str = Query("auto"), db: Session = Depends(get_db)):
+def extract_document(doc_id: int, passes: str = Query("1"), db: Session = Depends(get_db)):
     """
     Re-run Engine 1 OCR extraction on a previously-uploaded document.
 

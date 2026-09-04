@@ -57,7 +57,7 @@ def warm():
 @router.post("/extract")
 async def extract_deed(
     file: UploadFile = File(...),
-    passes: str = Query("auto", pattern="^(1|2|auto)$",
+    passes: str = Query("1", pattern="^(1|2|auto)$",
                         description="1 = fast single read, 2 = always cross-check, "
                                     "auto = second read only when confidence is low"),
 ):

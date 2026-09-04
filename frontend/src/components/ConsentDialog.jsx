@@ -37,7 +37,7 @@ export default function ConsentDialog({ isOpen, onAccept, onDecline }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md">
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md">
       <div className="bg-slate-900 border border-amber-500/30 rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-800">

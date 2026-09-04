@@ -52,10 +52,12 @@
   box-shadow: 0 0 20px rgba(244, 63, 94, 0.25);
 }
 
-/* Leaflet dark theme override */
+/* Leaflet dark theme override and stacking context isolation */
 .leaflet-container {
   background-color: #020617 !important;
   font-family: inherit;
+  z-index: 1 !important;
+  isolation: isolate;
 }
 .leaflet-popup-content-wrapper {
   background: #0f172a !important;

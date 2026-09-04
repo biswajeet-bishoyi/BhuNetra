@@ -15,7 +15,6 @@ import {
   Play,
   Search,
   X,
-  Globe,
   Pen,
   FolderOpen,
   Layers,
@@ -26,7 +25,6 @@ import {
   Compass,
   FileSpreadsheet
 } from 'lucide-react';
-import { useLang } from '../i18n';
 
 export default function Header({
   activeTab,
@@ -43,17 +41,13 @@ export default function Header({
   onLogout,
   onOpenOdishaModal
 }) {
-  const { lang, setLang, t, supportedLanguages } = useLang();
-
   // Active role determination: unauthenticated defaults to public Citizen view
   const activeRole = currentUser ? currentUser.role : (selectedRole || 'Citizen');
   const isOfficerOrCollector = activeRole === 'Revenue Officer' || activeRole === 'District Collector';
 
-  // Navigation & Language Dropdown State
+  // Navigation Dropdown State
   const [openNavDropdown, setOpenNavDropdown] = useState(null); // 'verification' | 'operations' | null
-  const [showLangDropdown, setShowLangDropdown] = useState(false);
   const navDropdownRef = useRef(null);
-  const langDropdownRef = useRef(null);
 
   // Close dropdown on outside click or escape key
   useEffect(() => {
@@ -61,14 +55,10 @@ export default function Header({
       if (navDropdownRef.current && !navDropdownRef.current.contains(e.target)) {
         setOpenNavDropdown(null);
       }
-      if (langDropdownRef.current && !langDropdownRef.current.contains(e.target)) {
-        setShowLangDropdown(false);
-      }
     };
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         setOpenNavDropdown(null);
-        setShowLangDropdown(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -82,18 +72,18 @@ export default function Header({
   // Primary Direct Tabs
   const primaryTabs = [
     ...(activeRole === 'District Collector'
-      ? [{ id: 'analytics', label: t('tab.analytics') || 'Executive Analytics', icon: BarChart3, badge: 'Executive' }]
+      ? [{ id: 'analytics', label: 'Executive Analytics', icon: BarChart3, badge: 'Executive' }]
       : []),
-    { id: 'map', label: t('tab.map') || 'GIS Map', icon: Map },
-    { id: 'ocr', label: t('tab.ocr') || 'Registry OCR', icon: FileText },
+    { id: 'map', label: 'GIS Map', icon: Map },
+    { id: 'ocr', label: 'Registry OCR', icon: FileText },
     ...(isOfficerOrCollector
-      ? [{ id: 'review', label: t('tab.review') || 'Officer Queue', icon: CheckCircle, badge: 'P0' }]
+      ? [{ id: 'review', label: 'Officer Queue', icon: CheckCircle, badge: 'P0' }]
       : []),
     // For Citizens, directly expose Ownership and Satellite cross-check
     ...(!isOfficerOrCollector
       ? [
-          { id: 'ownership', label: t('tab.ownership') || 'Ownership Graph', icon: Clock },
-          { id: 'satellite', label: t('tab.satellite') || 'Satellite Cross-Check', icon: Satellite }
+          { id: 'ownership', label: 'Ownership Graph', icon: Clock },
+          { id: 'satellite', label: 'Satellite Cross-Check', icon: Satellite }
         ]
       : [])
   ];
@@ -102,19 +92,19 @@ export default function Header({
   const verificationTabs = [
     {
       id: 'ownership',
-      label: t('tab.ownership') || 'Ownership Graph',
+      label: 'Ownership Graph',
       description: 'Title chain, genealogical lineage & sale deeds',
       icon: Clock
     },
     {
       id: 'satellite',
-      label: t('tab.satellite') || 'Satellite Cross-Check',
+      label: 'Satellite Cross-Check',
       description: 'Sentinel-2 NDVI, boundary shifts & vegetation index',
       icon: Satellite
     },
     {
       id: 'timeline',
-      label: t('tab.timeline') || 'Risk Timeline',
+      label: 'Risk Timeline',
       description: 'Temporal risk trajectory & anomaly progression',
       icon: TrendingUp
     }
@@ -124,25 +114,25 @@ export default function Header({
   const operationsTabs = [
     {
       id: 'revenue',
-      label: t('tab.revenue') || 'Revenue Court',
+      label: 'Revenue Court',
       description: 'Pending litigations, stay orders & injunctions',
       icon: Scale
     },
     {
       id: 'mutations',
-      label: t('tab.mutations') || 'Mutations Registry',
+      label: 'Mutations Registry',
       description: 'Title transfer requests & Tahsildar approval workflow',
       icon: Pen
     },
     {
       id: 'documents',
-      label: t('tab.documents') || 'Document Vault',
+      label: 'Document Vault',
       description: 'Extracted deeds, encumbrance certs & pattas',
       icon: FolderOpen
     },
     {
       id: 'batch',
-      label: t('tab.batch') || 'Batch Processing',
+      label: 'Batch Processing',
       description: 'Bulk deed ingestion & automated anomaly screening',
       icon: Layers
     }
@@ -312,54 +302,6 @@ export default function Header({
             <span className="hidden sm:inline">Engine Status</span>
             <span className="sm:hidden">Engine</span>
           </button>
-
-          {/* Indic Multilingual Language Selector (Sarvam AI) */}
-          <div className="relative" ref={langDropdownRef}>
-            <button
-              onClick={() => setShowLangDropdown(!showLangDropdown)}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-xs font-bold text-slate-200 border border-slate-700 transition cursor-pointer shadow-sm"
-              title="Select Language (Sarvam AI Indic Platform)"
-            >
-              <Globe className="w-3.5 h-3.5 text-amber-400" />
-              <span>
-                {supportedLanguages.find((l) => l.code === lang)?.native || 'English'}
-              </span>
-              <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${showLangDropdown ? 'rotate-180' : ''}`} />
-            </button>
-
-            {showLangDropdown && (
-              <div className="absolute top-full mt-1.5 right-0 w-48 bg-slate-900/98 backdrop-blur-xl border border-slate-700 rounded-xl shadow-2xl z-[9999] p-1.5 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
-                <div className="px-2 py-1 text-[9px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-800 flex items-center justify-between">
-                  <span>Indic Languages</span>
-                  <span className="text-amber-400 font-mono text-[8px]">IndicTrans</span>
-                </div>
-                {supportedLanguages.map((item) => {
-                  const isSelected = lang === item.code;
-                  return (
-                    <button
-                      key={item.code}
-                      onClick={() => {
-                        setLang(item.code);
-                        setShowLangDropdown(false);
-                      }}
-                      className={`w-full text-left flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition cursor-pointer ${
-                        isSelected
-                          ? 'bg-amber-500/15 text-amber-300 font-bold border border-amber-500/30'
-                          : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span>{item.flag}</span>
-                        <span>{item.native}</span>
-                        <span className="text-[10px] text-slate-500 font-normal">({item.name})</span>
-                      </div>
-                      {isSelected && <Check className="w-3.5 h-3.5 text-amber-400" />}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
 
           {/* Demo Walkthrough Trigger */}
           <button

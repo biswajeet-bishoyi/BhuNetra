@@ -1,117 +1,102 @@
-import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, GeoJSON, Tooltip, useMap } from 'react-leaflet';
-import { ShieldAlert, AlertCircle, CheckCircle, Scale, ArrowRight, Activity, MapPin, Sliders, Lock, FileText, Volume2, BellRing, Smartphone, MessageSquare, Sparkles } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import * as maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import {
+  ShieldAlert, AlertCircle, CheckCircle, Scale, ArrowRight, Activity, MapPin,
+  Sliders, Lock, FileText, Volume2, BellRing, Smartphone, MessageSquare, Sparkles,
+  Compass, Layers, Maximize2
+} from 'lucide-react';
 import VoiceAssistant from './VoiceAssistant';
 import LandHealthCard from './LandHealthCard';
 import CitizenAlertModal from './CitizenAlertModal';
 
-function MapRecenter({ selectedParcel }) {
-  const map = useMap();
-  useEffect(() => {
-    if (selectedParcel?.geometry?.coordinates) {
-      try {
-        const coords = selectedParcel.geometry.coordinates[0];
-        if (coords && coords.length > 0) {
-          const lats = coords.map(c => c[1]);
-          const lngs = coords.map(c => c[0]);
-          const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-          const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
-          const center = [(minLat + maxLat) / 2, (minLng + maxLng) / 2];
-          map.flyTo(center, 18, { duration: 1.2 });
-        }
-      } catch (e) {
-        console.error("Map center error", e);
+// Basemap style definitions for MapLibre GL JS
+const BASEMAP_STYLES = {
+  satellite: {
+    version: 8,
+    sources: {
+      'esri-satellite': {
+        type: 'raster',
+        tiles: [
+          'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+        ],
+        tileSize: 256,
+        attribution: '&copy; Esri, Maxar, Earthstar Geographics'
       }
-    }
-  }, [selectedParcel, map]);
-  return null;
-}
+    },
+    layers: [
+      {
+        id: 'satellite-tiles',
+        type: 'raster',
+        source: 'esri-satellite',
+        minzoom: 0,
+        maxzoom: 20
+      }
+    ]
+  },
+  streets: {
+    version: 8,
+    sources: {
+      'osm-tiles': {
+        type: 'raster',
+        tiles: [
+          'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+        ],
+        tileSize: 256,
+        attribution: '&copy; OpenStreetMap contributors'
+      }
+    },
+    layers: [
+      {
+        id: 'osm-tiles-layer',
+        type: 'raster',
+        source: 'osm-tiles',
+        minzoom: 0,
+        maxzoom: 19
+      }
+    ]
+  }
+};
 
-export default function MapViewer({ parcelsData, selectedParcel, setSelectedParcel, onSelectTab, selectedRole }) {
+export default function MapViewer({
+  parcelsData,
+  selectedParcel,
+  setSelectedParcel,
+  onSelectTab,
+  selectedRole
+}) {
+  const mapContainerRef = useRef(null);
+  const mapRef = useRef(null);
+  const hoveredFeatureIdRef = useRef(null);
+
+  const [mapLayer, setMapLayer] = useState('satellite'); // 'satellite' | 'streets'
+  const [is3D, setIs3D] = useState(true);
   const [riskEnsemble, setRiskEnsemble] = useState(null);
   const [loadingRisk, setLoadingRisk] = useState(false);
   const [showHealthCard, setShowHealthCard] = useState(false);
   const [showFraudAlertModal, setShowFraudAlertModal] = useState(false);
 
-  // Center around Shamshabad Mandal, Rangareddy District, Telangana (17.258, 78.434)
-  const mapCenter = [17.258, 78.434];
+  // Default Center: Shamshabad, Telangana (lng: 78.434, lat: 17.258)
+  const defaultCenter = [78.434, 17.258];
 
-  useEffect(() => {
-    if (selectedParcel?.properties?.parcel_id) {
-      fetchRiskDetails(selectedParcel.properties.parcel_id);
+  const toggle3D = () => {
+    const map = mapRef.current;
+    if (!map) return;
+    const next3D = !is3D;
+    setIs3D(next3D);
+    if (next3D) {
+      map.easeTo({
+        pitch: 45,
+        bearing: -15,
+        duration: 800
+      });
+    } else {
+      map.easeTo({
+        pitch: 0,
+        bearing: 0,
+        duration: 800
+      });
     }
-  }, [selectedParcel, selectedRole]);
-
-  const fetchRiskDetails = async (parcelId) => {
-    setLoadingRisk(true);
-    try {
-      const res = await fetch(`/api/risk-score/${parcelId}?role=${encodeURIComponent(selectedRole || 'Revenue Officer')}`);
-      if (res.ok) {
-        const data = await res.json();
-        setRiskEnsemble(data);
-      }
-    } catch (err) {
-      console.error("Failed to fetch risk score", err);
-    } finally {
-      setLoadingRisk(false);
-    }
-  };
-
-  const getParcelStyle = (feature) => {
-    const props = feature.properties;
-    const pid = props.parcel_id;
-    const isAnomalous = props.is_anomalous;
-    const isSelected = selectedParcel?.properties?.parcel_id === pid;
-    const isUploaded = props.is_uploaded_plot;
-
-    if (isUploaded) {
-      return {
-        color: "#06b6d4", // Electric cyan
-        weight: isSelected ? 4.5 : 3,
-        fillColor: "#06b6d4",
-        fillOpacity: isSelected ? 0.85 : 0.65,
-        dashArray: isSelected ? "" : "4, 4"
-      };
-    }
-
-    let color = "#10b981"; // Green
-    let fillColor = "#10b981";
-    let fillOpacity = 0.35;
-
-    if (pid === "P-105" || pid === "P-135" || pid === "P-108" || isAnomalous) {
-      color = "#f43f5e"; // Red
-      fillColor = "#f43f5e";
-      fillOpacity = 0.55;
-    } else if (pid === "P-112" || pid === "P-118" || props.revenue_court_status !== "Clean") {
-      color = "#f59e0b"; // Yellow
-      fillColor = "#f59e0b";
-      fillOpacity = 0.45;
-    }
-
-    if (isSelected) {
-      return {
-        color: "#ffffff",
-        weight: 3.5,
-        fillColor: fillColor,
-        fillOpacity: 0.75,
-        dashArray: ""
-      };
-    }
-
-    return {
-      color: color,
-      weight: 2,
-      fillColor: fillColor,
-      fillOpacity: fillOpacity
-    };
-  };
-
-  const onEachFeature = (feature, layer) => {
-    layer.on({
-      click: () => {
-        setSelectedParcel(feature);
-      }
-    });
   };
 
   // DPDP Act 2023 Data Minimization: Mask owner name for Citizen view
@@ -123,7 +108,274 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
     return name;
   };
 
-  const [mapLayer, setMapLayer] = useState('satellite'); // 'satellite' | 'streets'
+  // Helper to add parcels layers to MapLibre instance
+  const addParcelLayers = (map, data) => {
+    if (!data || !data.features) return;
+
+    // Remove existing layers if present
+    if (map.getLayer('parcels-label')) map.removeLayer('parcels-label');
+    if (map.getLayer('parcels-stroke')) map.removeLayer('parcels-stroke');
+    if (map.getLayer('parcels-fill')) map.removeLayer('parcels-fill');
+    if (map.getSource('parcels-source')) map.removeSource('parcels-source');
+
+    // Add GeoJSON Source
+    map.addSource('parcels-source', {
+      type: 'geojson',
+      data: data,
+      generateId: true
+    });
+
+    // 1. Cadastral Fill Layer with Dynamic Risk & Upload Styling
+    map.addLayer({
+      id: 'parcels-fill',
+      type: 'fill',
+      source: 'parcels-source',
+      paint: {
+        'fill-color': [
+          'case',
+          ['==', ['get', 'is_uploaded_plot'], true],
+          '#06b6d4', // Cyan for uploaded deed plot
+          ['==', ['get', 'parcel_id'], 'P-105'],
+          '#f43f5e', // Red - Anomaly Flagged
+          ['==', ['get', 'parcel_id'], 'P-135'],
+          '#f43f5e',
+          ['==', ['get', 'parcel_id'], 'P-108'],
+          '#f43f5e',
+          ['==', ['get', 'is_anomalous'], true],
+          '#f43f5e',
+          ['!=', ['get', 'revenue_court_status'], 'Clean'],
+          '#f59e0b', // Amber - Court Litigation
+          ['==', ['get', 'parcel_id'], 'P-112'],
+          '#f59e0b',
+          ['==', ['get', 'parcel_id'], 'P-118'],
+          '#f59e0b',
+          '#10b981'  // Emerald Green - Verified Clean
+        ],
+        'fill-opacity': [
+          'case',
+          ['boolean', ['feature-state', 'hover'], false],
+          0.85,
+          ['boolean', ['feature-state', 'selected'], false],
+          0.90,
+          0.50
+        ]
+      }
+    });
+
+    // 2. Cadastral Boundary Stroke Layer
+    map.addLayer({
+      id: 'parcels-stroke',
+      type: 'line',
+      source: 'parcels-source',
+      paint: {
+        'line-color': [
+          'case',
+          ['boolean', ['feature-state', 'selected'], false],
+          '#ffffff',
+          ['==', ['get', 'is_uploaded_plot'], true],
+          '#22d3ee',
+          '#ffffff'
+        ],
+        'line-width': [
+          'case',
+          ['boolean', ['feature-state', 'selected'], false],
+          4,
+          ['boolean', ['feature-state', 'hover'], false],
+          3,
+          1.8
+        ]
+      }
+    });
+
+    // 3. Cadastral Parcel Text Labels (Survey / Khasra / ID)
+    map.addLayer({
+      id: 'parcels-label',
+      type: 'symbol',
+      source: 'parcels-source',
+      layout: {
+        'text-field': [
+          'coalesce',
+          ['get', 'survey_no'],
+          ['get', 'khasra_no'],
+          ['get', 'parcel_id']
+        ],
+        'text-size': 12,
+        'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+        'text-anchor': 'center',
+        'text-allow-overlap': false
+      },
+      paint: {
+        'text-color': '#ffffff',
+        'text-halo-color': '#020617',
+        'text-halo-width': 2
+      }
+    });
+
+    // Mouse Interaction Events
+    map.on('mousemove', 'parcels-fill', (e) => {
+      if (e.features.length > 0) {
+        if (hoveredFeatureIdRef.current !== null) {
+          map.setFeatureState(
+            { source: 'parcels-source', id: hoveredFeatureIdRef.current },
+            { hover: false }
+          );
+        }
+        hoveredFeatureIdRef.current = e.features[0].id;
+        map.setFeatureState(
+          { source: 'parcels-source', id: hoveredFeatureIdRef.current },
+          { hover: true }
+        );
+        map.getCanvas().style.cursor = 'pointer';
+      }
+    });
+
+    map.on('mouseleave', 'parcels-fill', () => {
+      if (hoveredFeatureIdRef.current !== null) {
+        map.setFeatureState(
+          { source: 'parcels-source', id: hoveredFeatureIdRef.current },
+          { hover: false }
+        );
+      }
+      hoveredFeatureIdRef.current = null;
+      map.getCanvas().style.cursor = '';
+    });
+
+    map.on('click', 'parcels-fill', (e) => {
+      if (e.features.length > 0) {
+        const feat = e.features[0];
+        // Match with full GeoJSON feature from parcelsData
+        const matched = data.features.find(
+          (f) => f.properties?.parcel_id === feat.properties?.parcel_id
+        ) || feat;
+        setSelectedParcel(matched);
+      }
+    });
+  };
+
+  // Initialize MapLibre GL Map
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+
+    const map = new maplibregl.Map({
+      container: mapContainerRef.current,
+      style: BASEMAP_STYLES[mapLayer],
+      center: defaultCenter,
+      zoom: 16,
+      pitch: 30, // 3D perspective pitch
+      bearing: -5,
+      attributionControl: false
+    });
+
+    // Add Map Navigation Controls (Zoom, 3D Pitch tilt, Compass)
+    map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-right');
+    map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
+
+    map.on('load', () => {
+      if (parcelsData) {
+        addParcelLayers(map, parcelsData);
+      }
+    });
+
+    mapRef.current = map;
+
+    return () => {
+      map.remove();
+    };
+  }, []);
+
+  // Update Style when Map Layer changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    map.setStyle(BASEMAP_STYLES[mapLayer]);
+    map.once('style.load', () => {
+      if (parcelsData) {
+        addParcelLayers(map, parcelsData);
+      }
+    });
+  }, [mapLayer]);
+
+  // Update Data when parcelsData updates
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+
+    if (parcelsData) {
+      addParcelLayers(map, parcelsData);
+    }
+  }, [parcelsData]);
+
+  // Handle Parcel Selection & Camera Fly-To Animation
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !selectedParcel) return;
+
+    try {
+      let targetCenter = null;
+
+      if (selectedParcel.properties?.centroid) {
+        const c = selectedParcel.properties.centroid;
+        targetCenter = [c[1], c[0]]; // [lng, lat]
+      } else if (selectedParcel.geometry?.coordinates) {
+        const coords = selectedParcel.geometry.coordinates[0];
+        if (coords && coords.length > 0) {
+          const lngs = coords.map((c) => c[0]);
+          const lats = coords.map((c) => c[1]);
+          const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+          const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+          targetCenter = [(minLng + maxLng) / 2, (minLat + maxLat) / 2];
+        }
+      }
+
+      if (targetCenter) {
+        map.flyTo({
+          center: targetCenter,
+          zoom: 17.5,
+          pitch: 35,
+          duration: 1200,
+          essential: true
+        });
+      }
+
+      // Update selected feature-state
+      if (map.getSource('parcels-source') && parcelsData?.features) {
+        parcelsData.features.forEach((f, idx) => {
+          const isSel = f.properties?.parcel_id === selectedParcel.properties?.parcel_id;
+          map.setFeatureState(
+            { source: 'parcels-source', id: idx },
+            { selected: isSel }
+          );
+        });
+      }
+    } catch (err) {
+      console.error('Error centering MapLibre view:', err);
+    }
+  }, [selectedParcel]);
+
+  // Fetch Risk Ensemble details on parcel selection
+  useEffect(() => {
+    if (selectedParcel?.properties?.parcel_id) {
+      fetchRiskDetails(selectedParcel.properties.parcel_id);
+    }
+  }, [selectedParcel, selectedRole]);
+
+  const fetchRiskDetails = async (parcelId) => {
+    setLoadingRisk(true);
+    try {
+      const res = await fetch(
+        `/api/risk-score/${parcelId}?role=${encodeURIComponent(selectedRole || 'Revenue Officer')}`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setRiskEnsemble(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch risk score', err);
+    } finally {
+      setLoadingRisk(false);
+    }
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-140px)]">
@@ -142,14 +394,16 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
         selectedParcelId={selectedParcel?.properties?.parcel_id || 'P-105'}
       />
 
-      {/* Map Container */}
+      {/* WebGL Map Container */}
       <div className="lg:col-span-2 glass-panel rounded-2xl overflow-hidden border border-slate-800 relative flex flex-col">
         {/* Map Header Overlay */}
-        <div className="absolute top-4 left-4 z-[1000] glass-panel px-3.5 py-2 rounded-xl border border-slate-700/80 shadow-2xl flex items-center gap-3 bg-slate-900/95 backdrop-blur-md">
+        <div className="absolute top-4 left-4 z-10 glass-panel px-3.5 py-2 rounded-xl border border-slate-700/80 shadow-2xl flex items-center gap-3 bg-slate-900/95 backdrop-blur-md">
           <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shrink-0"></div>
           <div>
             <h3 className="text-xs font-bold text-slate-100 flex items-center gap-2">
-              <span>{selectedParcel?.properties?.village || 'Bhubaneswar'} ({selectedParcel?.properties?.district || 'Khordha'}) Cadastral Map</span>
+              <span>
+                {selectedParcel?.properties?.village || 'Bhubaneswar'} ({selectedParcel?.properties?.district || 'Khordha'}) Cadastral Map
+              </span>
               {selectedParcel?.properties?.khasra_no && (
                 <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono text-[10px] border border-amber-500/40">
                   Khasra {selectedParcel.properties.khasra_no}
@@ -157,18 +411,24 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
               )}
             </h3>
             <p className="text-[10px] text-slate-400">
-              {selectedParcel?.properties?.cadastre_authority || (selectedParcel?.properties?.state === 'Odisha' ? 'Odisha Bhulekh Cadastre' : (selectedParcel?.properties?.state?.includes('Delhi') ? 'Delhi DORIS Cadastre' : 'Telangana Dharani Cadastre'))} • Live GeoPandas / Shapely Spatial Index
+              {selectedParcel?.properties?.cadastre_authority ||
+                (selectedParcel?.properties?.state === 'Odisha'
+                  ? 'Odisha Bhulekh Cadastre'
+                  : selectedParcel?.properties?.state?.includes('Delhi')
+                  ? 'Delhi DORIS Cadastre'
+                  : 'Telangana Dharani Cadastre')}{' '}
+              • MapLibre GL WebGL Vector Engine
             </p>
           </div>
         </div>
 
-        {/* Map Layer Mode Switcher (Satellite vs Street) with z-[1000] */}
-        <div className="absolute top-4 right-4 z-[1000] glass-panel p-1 rounded-xl border border-slate-700/80 shadow-2xl flex items-center gap-1.5 text-xs bg-slate-900/95 backdrop-blur-md">
+        {/* Map Layer Mode Switcher (Satellite vs Street) & 2D/3D Switcher */}
+        <div className="absolute top-4 right-4 z-10 glass-panel p-1 rounded-xl border border-slate-700/80 shadow-2xl flex items-center gap-1.5 text-xs bg-slate-900/95 backdrop-blur-md">
           <button
             onClick={() => setMapLayer('satellite')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
               mapLayer === 'satellite'
-                ? 'bg-amber-500 text-slate-950 shadow-md'
+                ? 'bg-amber-500 text-slate-950 shadow-md font-extrabold'
                 : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
             }`}
           >
@@ -176,18 +436,30 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
           </button>
           <button
             onClick={() => setMapLayer('streets')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
               mapLayer === 'streets'
-                ? 'bg-amber-500 text-slate-950 shadow-md'
+                ? 'bg-amber-500 text-slate-950 shadow-md font-extrabold'
                 : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
             }`}
           >
             <span>🗺️ Streets</span>
           </button>
+          <div className="h-4 w-[1px] bg-slate-700 mx-0.5" />
+          <button
+            onClick={toggle3D}
+            title={is3D ? "Switch to Flat 2D Top-Down View" : "Switch to 3D Perspective Pitch View"}
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-black transition flex items-center gap-1.5 cursor-pointer border ${
+              is3D
+                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 shadow-sm'
+                : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white hover:bg-slate-700'
+            }`}
+          >
+            <span>{is3D ? '📐 3D' : '🗺️ 2D'}</span>
+          </button>
         </div>
 
         {/* Risk Legend Overlay */}
-        <div className="absolute bottom-4 left-4 z-[1000] glass-panel px-3 py-2 rounded-xl border border-slate-700/80 shadow-2xl flex flex-wrap items-center gap-3 text-xs font-medium bg-slate-900/95 backdrop-blur-md">
+        <div className="absolute bottom-4 left-4 z-10 glass-panel px-3 py-2 rounded-xl border border-slate-700/80 shadow-2xl flex flex-wrap items-center gap-3 text-xs font-medium bg-slate-900/95 backdrop-blur-md">
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded bg-cyan-400 shadow-[0_0_8px_#06b6d4]"></span>
             <span className="text-cyan-300 font-bold">Uploaded Plot</span>
@@ -206,39 +478,8 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
           </div>
         </div>
 
-        {parcelsData && parcelsData.features ? (
-          <MapContainer
-            center={mapCenter}
-            zoom={16}
-            style={{ width: '100%', height: '100%' }}
-            zoomControl={true}
-          >
-            <MapRecenter selectedParcel={selectedParcel} />
-            {mapLayer === 'satellite' ? (
-              <TileLayer
-                attribution='&copy; <a href="https://www.esri.com/">Esri</a>, Maxar, Earthstar Geographics'
-                url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                maxZoom={19}
-              />
-            ) : (
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-                maxZoom={19}
-              />
-            )}
-            <GeoJSON
-              key={`${JSON.stringify(parcelsData)}-${mapLayer}-${selectedParcel?.properties?.parcel_id}`}
-              data={parcelsData}
-              style={getParcelStyle}
-              onEachFeature={onEachFeature}
-            />
-          </MapContainer>
-        ) : (
-          <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">
-            Loading cadastral parcels...
-          </div>
-        )}
+        {/* MapLibre Canvas Container */}
+        <div ref={mapContainerRef} className="w-full h-full min-h-[480px] flex-1" />
       </div>
 
       {/* Side Panel: Selected Parcel Details & Risk Explanation */}
@@ -257,7 +498,9 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
                   </div>
                 )}
                 <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider">
-                  {selectedParcel.properties.village || 'Chandrasekharpur'}, {selectedParcel.properties.mandal || selectedParcel.properties.district || 'Khordha'}, {selectedParcel.properties.state || 'Odisha'}
+                  {selectedParcel.properties.village || 'Chandrasekharpur'},{' '}
+                  {selectedParcel.properties.mandal || selectedParcel.properties.district || 'Khordha'},{' '}
+                  {selectedParcel.properties.state || 'Odisha'}
                 </span>
                 <h2 className="text-xl font-extrabold text-slate-100 mt-0.5">
                   Parcel {selectedParcel.properties.parcel_id}
@@ -323,12 +566,16 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
                 <span className="text-slate-400 text-[10px] uppercase font-semibold">Claimed Extent</span>
                 <p className="font-bold text-slate-200 mt-0.5">
                   {selectedParcel.properties.claimed_area_sqm} sqm
-                  {selectedParcel.properties.area_acres_printed ? ` (${selectedParcel.properties.area_acres_printed})` : ''}
+                  {selectedParcel.properties.area_acres_printed
+                    ? ` (${selectedParcel.properties.area_acres_printed})`
+                    : ''}
                 </p>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800">
                 <span className="text-slate-400 text-[10px] uppercase font-semibold">GIS Actual Extent</span>
-                <p className="font-bold text-slate-200 mt-0.5">{selectedParcel.properties.actual_area_sqm} sqm</p>
+                <p className="font-bold text-slate-200 mt-0.5">
+                  {selectedParcel.properties.actual_area_sqm} sqm
+                </p>
               </div>
             </div>
 
@@ -345,17 +592,24 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Activity className="w-4 h-4 text-amber-400" />
-                  <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider">Engine 5 SHAP Feature Attribution</h4>
+                  <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
+                    Engine 5 SHAP Feature Attribution
+                  </h4>
                 </div>
                 <span className="text-[10px] text-slate-400 font-mono">XAI</span>
               </div>
 
               {loadingRisk ? (
-                <div className="text-xs text-slate-400 py-2">Computing ensemble risk scores & SHAP feature values...</div>
+                <div className="text-xs text-slate-400 py-2">
+                  Computing ensemble risk scores & SHAP feature values...
+                </div>
               ) : riskEnsemble && riskEnsemble.top_explanations ? (
                 <div className="space-y-2">
                   {riskEnsemble.top_explanations.map((exp, idx) => (
-                    <div key={idx} className="p-2 rounded-lg bg-slate-950/70 border border-slate-800/80 flex items-start gap-2">
+                    <div
+                      key={idx}
+                      className="p-2 rounded-lg bg-slate-950/70 border border-slate-800/80 flex items-start gap-2"
+                    >
                       {riskEnsemble.ensemble_risk_level === 'RED' ? (
                         <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
                       ) : riskEnsemble.ensemble_risk_level === 'YELLOW' ? (
@@ -368,19 +622,23 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-slate-400">Select a parcel on the map to inspect feature explanations.</p>
+                <p className="text-xs text-slate-400">
+                  Select a parcel on the map to inspect feature explanations.
+                </p>
               )}
             </div>
 
             {/* Action Buttons */}
             <div className="space-y-2 pt-1">
-              {/* Option A: Contextual Land Protection Fraud Alerts Button */}
               <button
                 onClick={() => setShowFraudAlertModal(true)}
                 className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold shadow-md shadow-emerald-500/10 transition cursor-pointer"
               >
                 <Smartphone className="w-4 h-4 text-emerald-400" />
-                <span>📱 Enable WhatsApp / SMS Fraud Alerts for Sy. {selectedParcel.properties.survey_no}</span>
+                <span>
+                  📱 Enable WhatsApp / SMS Fraud Alerts for Sy.{' '}
+                  {selectedParcel.properties.survey_no}
+                </span>
               </button>
 
               <button

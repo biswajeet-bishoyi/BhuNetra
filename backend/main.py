@@ -38,8 +38,7 @@ from routers import (
     mutations,
     alerts,
     parcels,
-    agents,
-    translation
+    agents
 )
 
 # Initialize DB tables
@@ -94,8 +93,6 @@ app.include_router(mutations.router)
 app.include_router(mutations.router, prefix="/api")
 app.include_router(parcels.router)
 app.include_router(agents.router)
-app.include_router(translation.router, prefix="/api")
-app.include_router(translation.router)
 
 # Serve synthetic scan files and satellite images
 data_dir = os.path.join(os.path.dirname(__file__), "..", "data")

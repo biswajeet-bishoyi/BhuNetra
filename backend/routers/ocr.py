@@ -145,11 +145,6 @@ def scrape_tamil_record(req: TamilScrapeRequest):
     try:
         res = ex.scrape_and_structure_tamil_text(req.tamil_text, model=req.model)
         rec = res.get("extracted_record", {})
-        try:
-            from services import uploaded_parcels
-        except ImportError:
-            from backend.services import uploaded_parcels
-
         dynamic_plot = uploaded_parcels.register_uploaded_parcel(
             fields=rec,
             filename="scraped_tamil_record.txt"
@@ -160,3 +155,26 @@ def scrape_tamil_record(req: TamilScrapeRequest):
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.post("/paddle-extract")
+async def paddle_ocr_extract(
+    file: UploadFile = File(...),
+    lang: str = Query("en", description="PaddleOCR language: 'en', 'devanagari', 'tamil', 'telugu', 'kannada', 'bengali'"),
+):
+    """
+    Ultra-fast multilingual document OCR and cadastral field extraction using PaddleOCR (PP-OCRv4).
+    """
+    contents = await _read_upload(file)
+    try:
+        try:
+            from services import paddle_ocr_service as p_ocr
+        except ImportError:
+            from backend.services import paddle_ocr_service as p_ocr
+
+        res = p_ocr.extract_cadastral_fields_paddle(contents, lang=lang)
+        res["source_filename"] = file.filename
+        return {"success": True, "data": res}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"PaddleOCR extraction error: {exc}") from exc
+

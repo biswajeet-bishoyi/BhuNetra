@@ -112,6 +112,44 @@ class OdishaAdapter(StateAdapter):
         src = self.get_source_metadata(is_demo=True)
         return [
             CanonicalParcel(
+                parcel_id="OD-102-GJM",
+                state="Odisha",
+                district="Ganjam",
+                subdistrict="Chhatrapur Tahasil",
+                village="Chhatrapur",
+                primary_identifier=CanonicalIdentifier(
+                    id_type="khata_plot_number",
+                    value="102",
+                    label="Plot 102 (Khata No. 102)"
+                ),
+                account_reference="Khata No. 102",
+                owner_name="Sudrusti Sethi (ସୁଦୃଷ୍ଟି ସେଠୀ)",
+                father_or_husband_name="Narahari Sethi (ସ୍ଵା: ନରହରି ସେଠୀ)",
+                land_type="Raiyati (ରୟତି)",
+                area=AreaModel(
+                    sqm=4046.86,
+                    original_value=1.000,
+                    original_unit="acre",
+                    formatted="1.000 Acre (100 Decimals)"
+                ),
+                centroid=[19.3550, 84.9920],
+                polygon=[
+                    [84.9910, 19.3555],
+                    [84.9930, 19.3555],
+                    [84.9930, 19.3545],
+                    [84.9910, 19.3545],
+                    [84.9910, 19.3555]
+                ],
+                gis_status="CLEAN",
+                revenue_court_status="Clean Record",
+                source=src,
+                extra_attributes={
+                    "kissam": "Raiyati (ରୟତି)",
+                    "tenancy_status": "ସ୍ଥିତିବାନ (Rayati Sthitiban)",
+                    "statutory_portal": "https://bhulekh.ori.nic.in/RoRView.aspx"
+                }
+            ),
+            CanonicalParcel(
                 parcel_id="OD-1024-2",
                 state="Odisha",
                 district="Khordha",

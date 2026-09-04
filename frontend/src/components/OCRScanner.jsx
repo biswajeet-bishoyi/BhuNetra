@@ -49,7 +49,7 @@ const CHECK_LABELS = {
 };
 
 const SAMPLE_SCANS = [
-  { id: 'P-OD-142', label: '🌟 Odisha (Bhubaneswar RoR)', hint: 'Bhulekh Odisha · Plot 142/892, Chandrasekharpur, Khordha', file: 'scan_P-101.png', filename: 'Bhulekh_Odisha_Bhubaneswar_Plot142.png' },
+  { id: 'P-OD-102', label: '🌟 Odisha (Ganjam Chhatrapur RoR)', hint: 'Bhulekh Odisha · Khata No. 102, Sudrusti Sethi, Chhatrapur, Ganjam', file: 'odisha_ror_102.png', filename: 'Bhulekh_Odisha_Ganjam_Khata102.png' },
   { id: 'P-4661', label: '📄 Delhi (Sangam Vihar GPA)', hint: 'General Power of Attorney · Khasra 46/61, 32 Sq Yds', file: 'scan_P-105.png', filename: 'General_Power_of_Attorney_46-61.png' },
   { id: 'P-105', label: '🏛️ Telangana (Shamshabad Dharani)', hint: 'Printed Dharani Sale Deed · Shamshabad', file: 'scan_P-105.png', filename: 'scan_P-105.png' },
   { id: 'P-106', label: '✍️ Handwritten RoR (P-106)', hint: 'Handwritten RoR · Revenue Officer Review', file: 'scan_P-106.png', filename: 'scan_P-106.png' },
@@ -149,13 +149,13 @@ export default function OCRScanner({ onSelectParcel }) {
 
     try {
       const payload = {
-        khata_no: result.values.khatian_no || result.values.khasra_no || '145/12',
-        plot_no: result.values.survey_no || result.values.khasra_no || '1024/2',
-        village: result.values.village || 'Patia',
-        tahasil: result.values.mandal || 'Bhubaneswar',
-        district: result.values.district || 'Khordha',
-        tenant_name: result.values.owner_name || 'Bishnu Charan Das',
-        claimed_area_decimals: result.values.extent_decimals || 15.0,
+        khata_no: result.values.khatian_no || result.values.khasra_no || '102',
+        plot_no: result.values.survey_no || result.values.khasra_no || '102',
+        village: result.values.village || 'Chhatrapur',
+        tahasil: result.values.mandal || 'Chhatrapur Tahasil',
+        district: result.values.district || 'Ganjam',
+        tenant_name: result.values.owner_name || 'Sudrusti Sethi',
+        claimed_area_decimals: result.values.extent_decimals || 100.0,
         document_id: lifecycleDocId,
       };
 
@@ -351,7 +351,7 @@ export default function OCRScanner({ onSelectParcel }) {
                 className="bg-slate-900 border border-slate-700 text-amber-300 text-xs rounded-lg px-2.5 py-1 focus:outline-none focus:border-amber-500 cursor-pointer font-semibold shadow-inner"
               >
                 <option value="auto">Auto-Detect State / City (AI)</option>
-                <option value="odisha">🌟 Odisha — Bhubaneswar (Bhulekh)</option>
+                <option value="odisha">🌟 Odisha — Ganjam Chhatrapur (Bhulekh)</option>
                 <option value="delhi">📄 Delhi — Sangam Vihar (DORIS)</option>
                 <option value="telangana">🏛️ Telangana — Shamshabad (Dharani)</option>
               </select>

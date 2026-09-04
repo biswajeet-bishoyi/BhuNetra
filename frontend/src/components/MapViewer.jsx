@@ -40,14 +40,19 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
 
   // Self-heal / auto-fetch parcels if not yet available from parent
   useEffect(() => {
-    if (!parcelsData) {
+    if (!parcelsData || !parcelsData.features) {
       fetch('/api/gis-check/')
-        .then(r => r.json())
+        .then(r => {
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          return r.json();
+        })
         .then(d => {
-          setInternalParcels(d);
-          if (!selectedParcel && d?.features?.length > 0) {
-            const p105 = d.features.find(f => f.properties?.parcel_id === 'P-105') || d.features[0];
-            setSelectedParcel(p105);
+          if (d && d.features) {
+            setInternalParcels(d);
+            if (!selectedParcel && d.features.length > 0) {
+              const p105 = d.features.find(f => f.properties?.parcel_id === 'P-105') || d.features[0];
+              setSelectedParcel(p105);
+            }
           }
         })
         .catch(err => console.error("Failed to load parcels GIS data", err));
@@ -57,7 +62,7 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
     }
   }, [parcelsData]);
 
-  const activeParcels = parcelsData || internalParcels;
+  const activeParcels = (parcelsData && parcelsData.features) ? parcelsData : internalParcels;
 
   useEffect(() => {
     if (selectedParcel?.properties?.parcel_id) {
@@ -81,7 +86,7 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
   };
 
   const getParcelStyle = (feature) => {
-    const props = feature.properties;
+    const props = feature.properties || {};
     const pid = props.parcel_id;
     const isAnomalous = props.is_anomalous;
     const isSelected = selectedParcel?.properties?.parcel_id === pid;
@@ -99,16 +104,16 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
 
     let color = "#10b981"; // Green
     let fillColor = "#10b981";
-    let fillOpacity = 0.35;
+    let fillOpacity = 0.40;
 
     if (pid === "P-105" || pid === "P-135" || pid === "P-108" || isAnomalous) {
       color = "#f43f5e"; // Red
       fillColor = "#f43f5e";
-      fillOpacity = 0.55;
+      fillOpacity = 0.60;
     } else if (pid === "P-112" || pid === "P-118" || props.revenue_court_status !== "Clean") {
       color = "#f59e0b"; // Yellow
       fillColor = "#f59e0b";
-      fillOpacity = 0.45;
+      fillOpacity = 0.50;
     }
 
     if (isSelected) {
@@ -116,7 +121,7 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
         color: "#ffffff",
         weight: 3.5,
         fillColor: fillColor,
-        fillOpacity: 0.75,
+        fillOpacity: 0.80,
         dashArray: ""
       };
     }
@@ -149,7 +154,7 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
   const [mapLayer, setMapLayer] = useState('satellite'); // 'satellite' | 'streets'
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-140px)]">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-140px)] min-h-[600px]">
       {/* Land Health Card Modal */}
       <LandHealthCard
         parcelId={selectedParcel?.properties?.parcel_id || 'P-105'}
@@ -166,7 +171,7 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
       />
 
       {/* Map Container */}
-      <div className="lg:col-span-2 glass-panel rounded-2xl overflow-hidden border border-slate-800 relative flex flex-col">
+      <div className="lg:col-span-2 glass-panel rounded-2xl overflow-hidden border border-slate-800 relative flex flex-col h-full min-h-[550px]">
         {/* Map Header Overlay */}
         <div className="absolute top-4 left-4 z-[1000] glass-panel px-3.5 py-2 rounded-xl border border-slate-700/80 shadow-2xl flex items-center gap-3 bg-slate-900/95 backdrop-blur-md">
           <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shrink-0"></div>
@@ -233,7 +238,7 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
           <MapContainer
             center={mapCenter}
             zoom={16}
-            style={{ width: '100%', height: '100%' }}
+            style={{ width: '100%', height: '100%', minHeight: '550px' }}
             zoomControl={true}
           >
             <MapRecenter selectedParcel={selectedParcel} />
@@ -258,7 +263,7 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
             />
           </MapContainer>
         ) : (
-          <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">
+          <div className="flex-1 flex items-center justify-center text-slate-400 text-sm min-h-[500px]">
             Loading cadastral parcels...
           </div>
         )}

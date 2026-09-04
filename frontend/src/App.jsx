@@ -69,13 +69,24 @@ export default function App() {
     }
   };
 
-  const handleSelectParcelById = async (pid, customFeature) => {
+  const handleSelectParcelById = async (pid, customFeature, shouldSwitchTab = true) => {
+    // If customFeature is passed directly from OCR, select it immediately
+    if (customFeature) {
+      setSelectedParcel(customFeature);
+    }
     try {
       const res = await fetch('/api/gis-check/');
       if (res.ok) {
         const json = await res.json();
+        // If customFeature is provided and not yet in features list, prepend it
+        if (customFeature && json.features) {
+          const exists = json.features.some(f => f.properties?.parcel_id === customFeature.properties?.parcel_id);
+          if (!exists) {
+            json.features.unshift(customFeature);
+          }
+        }
         setParcelsData(json);
-        const target = (json.features && json.features.find(f => f.properties.parcel_id === pid)) || customFeature;
+        const target = (json.features && json.features.find(f => f.properties?.parcel_id === pid)) || customFeature;
         if (target) {
           setSelectedParcel(target);
         }
@@ -85,7 +96,9 @@ export default function App() {
     } catch (e) {
       if (customFeature) setSelectedParcel(customFeature);
     }
-    setActiveTab('map');
+    if (shouldSwitchTab !== false) {
+      setActiveTab('map');
+    }
   };
 
   const handleRoleChange = (newRole) => {

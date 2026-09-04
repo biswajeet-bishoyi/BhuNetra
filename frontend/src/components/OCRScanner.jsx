@@ -277,6 +277,11 @@ export default function OCRScanner({ onSelectParcel }) {
 
       setResult(r);
       setStep('extracted');
+
+      // Pre-select the uploaded plot in App state so GIS map is ready immediately
+      if (onSelectParcel && (r.uploaded_feature || r.parcel_id_hint)) {
+        onSelectParcel(r.parcel_id_hint, r.uploaded_feature, false);
+      }
     } catch (err) {
       setError({ status: 0, message: `Could not reach the digitization service. ${err.message}` });
       setStep(null);

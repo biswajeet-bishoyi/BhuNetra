@@ -1,25 +1,94 @@
 import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, GeoJSON, Tooltip, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, Tooltip, Marker, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { ShieldAlert, AlertCircle, CheckCircle, Scale, ArrowRight, Activity, MapPin, Sliders, Lock, FileText, Volume2, BellRing, Smartphone, MessageSquare, Sparkles } from 'lucide-react';
 import VoiceAssistant from './VoiceAssistant';
 import LandHealthCard from './LandHealthCard';
 import CitizenAlertModal from './CitizenAlertModal';
 
+import L from 'leaflet';
+
+function getParcelCenter(selectedParcel) {
+  if (!selectedParcel) return null;
+  if (selectedParcel.properties?.centroid) {
+    const c = selectedParcel.properties.centroid;
+    return [c[0], c[1]]; // [lat, lng]
+  }
+  if (selectedParcel.properties?.latitude && selectedParcel.properties?.longitude) {
+    return [Number(selectedParcel.properties.latitude), Number(selectedParcel.properties.longitude)];
+  }
+  if (selectedParcel.geometry) {
+    if (selectedParcel.geometry.type === 'Point') {
+      return [selectedParcel.geometry.coordinates[1], selectedParcel.geometry.coordinates[0]];
+    }
+    const coords = selectedParcel.geometry.coordinates[0];
+    if (coords && coords.length > 0) {
+      const lats = coords.map(c => c[1]);
+      const lngs = coords.map(c => c[0]);
+      const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+      const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+      return [(minLat + maxLat) / 2, (minLng + maxLng) / 2];
+    }
+  }
+  return null;
+}
+
+const createCadastralPinIcon = (label, isUploaded) => {
+  const color = isUploaded ? '#06b6d4' : '#f59e0b';
+  const shadowColor = isUploaded ? 'rgba(6, 182, 212, 0.7)' : 'rgba(245, 158, 11, 0.7)';
+  return L.divIcon({
+    className: 'cadastral-pin-marker',
+    html: `
+      <div style="position: relative; transform: translate(-50%, -100%); display: flex; flex-direction: column; align-items: center; pointer-events: none;">
+        <div style="
+          background: rgba(15, 23, 42, 0.95);
+          border: 2px solid ${color};
+          color: #f8fafc;
+          padding: 3px 8px;
+          border-radius: 9999px;
+          font-size: 11px;
+          font-weight: 800;
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+          white-space: nowrap;
+          box-shadow: 0 4px 14px ${shadowColor};
+          display: flex;
+          align-items: center;
+          gap: 5px;
+        ">
+          <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:${color}; box-shadow:0 0 8px ${color};"></span>
+          <span>${label}</span>
+        </div>
+        <div style="
+          width: 0;
+          height: 0;
+          border-left: 5px solid transparent;
+          border-right: 5px solid transparent;
+          border-top: 7px solid ${color};
+          margin: 0 auto;
+        "></div>
+        <div style="
+          width: 8px;
+          height: 8px;
+          background: ${color};
+          border-radius: 50%;
+          margin: -3px auto 0 auto;
+          box-shadow: 0 0 10px ${color};
+        "></div>
+      </div>
+    `,
+    iconSize: [30, 42],
+    iconAnchor: [15, 42]
+  });
+};
+
 function MapRecenter({ selectedParcel }) {
   const map = useMap();
   useEffect(() => {
-    if (selectedParcel?.geometry?.coordinates) {
+    map.invalidateSize();
+    const center = getParcelCenter(selectedParcel);
+    if (center) {
       try {
-        const coords = selectedParcel.geometry.coordinates[0];
-        if (coords && coords.length > 0) {
-          const lats = coords.map(c => c[1]);
-          const lngs = coords.map(c => c[0]);
-          const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-          const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
-          const center = [(minLat + maxLat) / 2, (minLng + maxLng) / 2];
-          map.flyTo(center, 18, { duration: 1.2 });
-        }
+        map.flyTo(center, 18, { duration: 1.2 });
       } catch (e) {
         console.error("Map center error", e);
       }
@@ -261,6 +330,23 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
               style={getParcelStyle}
               onEachFeature={onEachFeature}
             />
+            {selectedParcel && (() => {
+              const center = getParcelCenter(selectedParcel);
+              if (!center) return null;
+              const isUploaded = selectedParcel.properties?.is_uploaded_plot;
+              const label = selectedParcel.properties?.survey_no 
+                ? `Plot ${selectedParcel.properties.survey_no}` 
+                : (selectedParcel.properties?.khasra_no 
+                    ? `Khasra ${selectedParcel.properties.khasra_no}` 
+                    : `Parcel ${selectedParcel.properties?.parcel_id}`);
+              return (
+                <Marker
+                  key={`pin-${selectedParcel.properties?.parcel_id}-${center[0]}-${center[1]}`}
+                  position={center}
+                  icon={createCadastralPinIcon(label, isUploaded)}
+                />
+              );
+            })()}
           </MapContainer>
         ) : (
           <div className="flex-1 flex items-center justify-center text-slate-400 text-sm min-h-[500px]">

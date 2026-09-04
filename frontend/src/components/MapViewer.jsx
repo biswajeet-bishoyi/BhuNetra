@@ -422,40 +422,65 @@ export default function MapViewer({
           </div>
         </div>
 
-        {/* Map Layer Mode Switcher (Satellite vs Street) & 2D/3D Switcher */}
-        <div className="absolute top-4 right-4 z-10 glass-panel p-1 rounded-xl border border-slate-700/80 shadow-2xl flex items-center gap-1.5 text-xs bg-slate-900/95 backdrop-blur-md">
-          <button
-            onClick={() => setMapLayer('satellite')}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
-              mapLayer === 'satellite'
-                ? 'bg-amber-500 text-slate-950 shadow-md font-extrabold'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <span>🛰️ Satellite</span>
-          </button>
-          <button
-            onClick={() => setMapLayer('streets')}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
-              mapLayer === 'streets'
-                ? 'bg-amber-500 text-slate-950 shadow-md font-extrabold'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <span>🗺️ Streets</span>
-          </button>
-          <div className="h-4 w-[1px] bg-slate-700 mx-0.5" />
-          <button
-            onClick={toggle3D}
-            title={is3D ? "Switch to Flat 2D Top-Down View" : "Switch to 3D Perspective Pitch View"}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-black transition flex items-center gap-1.5 cursor-pointer border ${
-              is3D
-                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 shadow-sm'
-                : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white hover:bg-slate-700'
-            }`}
-          >
-            <span>{is3D ? '📐 3D' : '🗺️ 2D'}</span>
-          </button>
+        {/* Map Layer Mode Switcher (Satellite vs Street) & 2D / 3D Switcher */}
+        <div className="absolute top-4 right-4 z-10 glass-panel p-1 rounded-xl border border-slate-700/80 shadow-2xl flex items-center gap-2 text-xs bg-slate-900/95 backdrop-blur-md">
+          {/* Basemap Switcher */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setMapLayer('satellite')}
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                mapLayer === 'satellite'
+                  ? 'bg-amber-500 text-slate-950 shadow-md font-extrabold'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <span>🛰️ Satellite</span>
+            </button>
+            <button
+              onClick={() => setMapLayer('streets')}
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                mapLayer === 'streets'
+                  ? 'bg-amber-500 text-slate-950 shadow-md font-extrabold'
+                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <span>🗺️ Streets</span>
+            </button>
+          </div>
+
+          <div className="h-4 w-[1px] bg-slate-700" />
+
+          {/* 2D / 3D Segmented Switcher */}
+          <div className="flex items-center rounded-lg bg-slate-950/80 p-0.5 border border-slate-700/80">
+            <button
+              onClick={() => {
+                setIs3D(false);
+                mapRef.current?.easeTo({ pitch: 0, bearing: 0, duration: 700 });
+              }}
+              title="Flat 2D Top-Down Orthogonal View"
+              className={`px-2.5 py-1 rounded-md text-xs font-black transition cursor-pointer ${
+                !is3D
+                  ? 'bg-amber-500 text-slate-950 shadow-sm font-extrabold'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              2D
+            </button>
+            <button
+              onClick={() => {
+                setIs3D(true);
+                mapRef.current?.easeTo({ pitch: 45, bearing: -15, duration: 700 });
+              }}
+              title="3D Perspective Pitch Angle View"
+              className={`px-2.5 py-1 rounded-md text-xs font-black transition cursor-pointer ${
+                is3D
+                  ? 'bg-cyan-500 text-slate-950 shadow-sm font-extrabold'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              3D
+            </button>
+          </div>
         </div>
 
         {/* Risk Legend Overlay */}

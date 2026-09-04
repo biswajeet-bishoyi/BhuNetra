@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import DocumentReviewPanel from './DocumentReviewPanel';
 import UPBhulekhHistoryModal from './UPBhulekhHistoryModal';
+import OdishaBhulekhModal from './OdishaBhulekhModal';
 
 /**
  * Engine 1 — Document Digitization Workbench.
@@ -93,6 +94,12 @@ export default function OCRScanner({ onSelectParcel }) {
   const [upbhulekhModalOpen, setUpbhulekhModalOpen] = useState(false);
   const [upbhulekhError, setUpbhulekhError] = useState(null);
 
+  // Agno Framework Odisha Bhulekh RoR Agent States
+  const [odishaLoading, setOdishaLoading] = useState(false);
+  const [odishaData, setOdishaData] = useState(null);
+  const [odishaModalOpen, setOdishaModalOpen] = useState(false);
+  const [odishaError, setOdishaError] = useState(null);
+
   const handleFetchUPBhulekhHistory = async () => {
     if (!result || !result.values) return;
     setUpbhulekhLoading(true);
@@ -128,6 +135,47 @@ export default function OCRScanner({ onSelectParcel }) {
       setUpbhulekhError(err.message || 'Failed to fetch history from UP Bhulekh portal.');
     } finally {
       setUpbhulekhLoading(false);
+    }
+  };
+
+  const handleFetchOdishaBhulekh = async () => {
+    if (!result || !result.values) {
+      setOdishaModalOpen(true);
+      return;
+    }
+    setOdishaLoading(true);
+    setOdishaError(null);
+    setOdishaModalOpen(true);
+
+    try {
+      const payload = {
+        khata_no: result.values.khatian_no || result.values.khasra_no || '145/12',
+        plot_no: result.values.survey_no || result.values.khasra_no || '1024/2',
+        village: result.values.village || 'Patia',
+        tahasil: result.values.mandal || 'Bhubaneswar',
+        district: result.values.district || 'Khordha',
+        tenant_name: result.values.owner_name || 'Bishnu Charan Das',
+        claimed_area_decimals: result.values.extent_decimals || 15.0,
+        document_id: lifecycleDocId,
+      };
+
+      const res = await fetch('/api/agents/odisha-bhulekh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `HTTP Error ${res.status}`);
+      }
+
+      const data = await res.json();
+      setOdishaData(data);
+    } catch (err) {
+      setOdishaError(err.message || 'Failed to fetch RoR record from Odisha Bhulekh portal.');
+    } finally {
+      setOdishaLoading(false);
     }
   };
 
@@ -634,10 +682,30 @@ export default function OCRScanner({ onSelectParcel }) {
 
           {result && (
             <div className="pt-4 border-t border-slate-800 space-y-2.5">
+              {/* Odisha Bhulekh RoR Agent Trigger */}
+              <button
+                onClick={handleFetchOdishaBhulekh}
+                disabled={odishaLoading}
+                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-black transition shadow-lg shadow-emerald-950/40 flex items-center justify-center gap-2 cursor-pointer border border-emerald-400/30"
+              >
+                {odishaLoading ? (
+                  <>
+                    <span className="animate-spin text-sm">⏳</span>
+                    <span>Querying Odisha Bhulekh RoR with Agno AI Agent...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-base">📜</span>
+                    <span>Fetch Odisha Bhulekh RoR (ସ୍ୱତ୍ତ୍ୱ ଲିପି / bhulekh.ori.nic.in)</span>
+                  </>
+                )}
+              </button>
+
+              {/* UP Bhulekh Khatauni Agent Trigger */}
               <button
                 onClick={handleFetchUPBhulekhHistory}
                 disabled={upbhulekhLoading}
-                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white text-xs font-black transition shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer border border-cyan-400/30"
+                className="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer border border-slate-700"
               >
                 {upbhulekhLoading ? (
                   <>
@@ -647,7 +715,7 @@ export default function OCRScanner({ onSelectParcel }) {
                 ) : (
                   <>
                     <span className="text-base">🏛️</span>
-                    <span>Fetch Land History from UP Bhulekh (Launch Agno AI Agent)</span>
+                    <span>Fetch UP Bhulekh Khatauni (upbhulekh.gov.in)</span>
                   </>
                 )}
               </button>
@@ -678,6 +746,17 @@ export default function OCRScanner({ onSelectParcel }) {
         onLocateOnMap={() => {
           if (result) {
             onSelectParcel(result.parcel_id_hint || 'P-UP-45', result.uploaded_feature);
+          }
+        }}
+      />
+
+      <OdishaBhulekhModal
+        isOpen={odishaModalOpen}
+        onClose={() => setOdishaModalOpen(false)}
+        initialData={odishaData}
+        onLocateOnMap={() => {
+          if (result) {
+            onSelectParcel(result.parcel_id_hint || 'P-ODISHA-1024', result.uploaded_feature);
           }
         }}
       />

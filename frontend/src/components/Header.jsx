@@ -40,7 +40,8 @@ export default function Header({
   onSelectParcel,
   currentUser,
   onOpenLoginModal,
-  onLogout
+  onLogout,
+  onOpenOdishaModal
 }) {
   const { lang, setLang, t } = useLang();
 
@@ -325,6 +326,19 @@ export default function Header({
             <Play className="w-3.5 h-3.5 fill-current" />
             <span className="hidden sm:inline">Demo Tour</span>
           </button>
+
+          {/* Odisha Bhulekh RoR Intelligence Trigger */}
+          {onOpenOdishaModal && (
+            <button
+              onClick={onOpenOdishaModal}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition cursor-pointer shadow-sm shadow-emerald-950/30"
+              title="Query Odisha Bhulekh Record of Rights (bhulekh.ori.nic.in)"
+            >
+              <span>📜</span>
+              <span className="hidden sm:inline">Odisha RoR (ଭୂଲେଖ)</span>
+              <span className="sm:hidden">Odisha</span>
+            </button>
+          )}
 
           {/* User Profile & Auth State */}
           {currentUser ? (

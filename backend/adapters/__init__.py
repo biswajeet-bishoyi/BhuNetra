@@ -8,6 +8,7 @@ from adapters.rajasthan import RajasthanAdapter
 from adapters.maharashtra import MaharashtraAdapter
 from adapters.telangana import TelanganaAdapter
 from adapters.tamil_nadu import TamilNaduAdapter
+from adapters.odisha import OdishaAdapter
 from adapters.generic import GenericStateAdapter
 
 _ADAPTER_INSTANCES: Dict[str, StateAdapter] = {
@@ -15,7 +16,7 @@ _ADAPTER_INSTANCES: Dict[str, StateAdapter] = {
     "maharashtra": MaharashtraAdapter(),
     "telangana": TelanganaAdapter(),
     "tamil nadu": TamilNaduAdapter(),
-    "odisha": GenericStateAdapter("Odisha"),
+    "odisha": OdishaAdapter(),
     "delhi": GenericStateAdapter("Delhi"),
 }
 

@@ -1,0 +1,49 @@
+services:
+  # ---------------------------------------------------------------------------
+  # 1. BhuNetra AI Backend (FastAPI Web Service)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: bhunetra-backend
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: EXTRACTION_CONFIDENCE_THRESHOLD
+        value: 0.75
+      - key: EXTRACTION_MAX_EDGE
+        value: 1280
+      - key: JWT_SECRET
+        generateValue: true
+
+  # ---------------------------------------------------------------------------
+  # 2. BhuNetra AI Frontend (React + Vite Static Site)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: bhunetra-frontend
+    runtime: static
+    plan: free
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      # Forward API calls to backend
+      - type: rewrite
+        source: /api/*
+        destination: https://bhunetra-backend.onrender.com/api/*
+      # Forward static demo data (satellite/scans) to backend
+      - type: rewrite
+        source: /static-data/*
+        destination: https://bhunetra-backend.onrender.com/static-data/*
+      # Single Page Application fallback for client-side routing
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_BACKEND_URL
+        fromService:
+          type: web
+          name: bhunetra-backend
+          property: host

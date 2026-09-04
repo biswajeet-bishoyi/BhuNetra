@@ -120,6 +120,35 @@ def get_state_parcels_geojson(state: str):
 @router.get("/parcels/{parcel_id}")
 def get_single_parcel(parcel_id: str):
     """Retrieve full canonical details and GeoJSON geometry for a single parcel by ID."""
+    try:
+        from services.uploaded_parcels import get_uploaded_parcel
+    except ImportError:
+        from backend.services.uploaded_parcels import get_uploaded_parcel
+
+    up = get_uploaded_parcel(parcel_id)
+    if up:
+        props = up.get("properties", {})
+        return {
+            "parcel": {
+                "parcel_id": props.get("parcel_id"),
+                "state": props.get("state"),
+                "district": props.get("district"),
+                "subdistrict": props.get("mandal"),
+                "village": props.get("village"),
+                "identifier": {"type": "plot", "value": props.get("survey_no")},
+                "owner_names": [props.get("owner_name")] if props.get("owner_name") else [],
+                "area": {"value": props.get("claimed_area_sqm"), "unit": "sqm"},
+                "geometry": up.get("geometry"),
+                "cadastre_authority": props.get("cadastre_authority"),
+                "latitude": props.get("latitude"),
+                "longitude": props.get("longitude"),
+            },
+            "geojson": up,
+            "cadastre_authority": props.get("cadastre_authority"),
+            "latitude": props.get("latitude"),
+            "longitude": props.get("longitude")
+        }
+
     all_parcels = get_all_parcels_across_states()
     for p in all_parcels:
         if p.parcel_id.lower() == parcel_id.lower():
@@ -138,7 +167,10 @@ def get_single_parcel(parcel_id: str):
                         "area": f"{p.area.value} {p.area.unit}"
                     },
                     "geometry": p.geometry
-                }
+                },
+                "cadastre_authority": getattr(p, "cadastre_authority", "State Cadastre"),
+                "latitude": getattr(p, "latitude", None),
+                "longitude": getattr(p, "longitude", None)
             }
     raise HTTPException(status_code=404, detail=f"Parcel with ID '{parcel_id}' not found.")
 

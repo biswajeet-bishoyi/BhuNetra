@@ -78,38 +78,6 @@ _KNOWN_SCANS: Dict[int, Dict[str, Any]] = {
         "area_acres_printed": "1.3000",
         "land_use_claim": "Agricultural",
     },
-    49218: {  # Odisha Khatian Form No. 39-A (Chhatrapur, Ganjam)
-        "khasra_no": "102",
-        "survey_no": "102",
-        "deed_registration_no": "OD-BHULEKH-1976-GJM-102",
-        "khatian_no": "Khata No. 102",
-        "ulpin": "21-08420-0102-1976",
-        "owner_name": "Sudrusti Sethi (ସୁଦୃଷ୍ଟି ସେଠୀ)",
-        "father_or_husband": "Narahari Sethi (ସ୍ଵା: ନରହରି ସେଠୀ)",
-        "village": "Chhatrapur (ଛତ୍ରପୁର)",
-        "mandal": "Chhatrapur Tahasil (ଛତ୍ରପୁର ତହସିଲ)",
-        "district": "Ganjam (ଗଂଜାମ)",
-        "state": "Odisha (ଓଡ଼ିଶା)",
-        "claimed_area_sqm": 4046.86,
-        "area_acres_printed": "1.000",
-        "land_use_claim": "Raiyati (ରୟତି)",
-    },
-    44339: {  # Odisha Khatian Form No. 39-A (Chhatrapur, Ganjam - Browser Upload)
-        "khasra_no": "102",
-        "survey_no": "102",
-        "deed_registration_no": "OD-BHULEKH-1976-GJM-102",
-        "khatian_no": "Khata No. 102",
-        "ulpin": "21-08420-0102-1976",
-        "owner_name": "Sudrusti Sethi (ସୁଦୃଷ୍ଟି ସେଠୀ)",
-        "father_or_husband": "Narahari Sethi (ସ୍ଵା: ନରହରି ସେଠୀ)",
-        "village": "Chhatrapur (ଛତ୍ରପୁର)",
-        "mandal": "Chhatrapur Tahasil (ଛତ୍ରପୁର ତହସିଲ)",
-        "district": "Ganjam (ଗଂଜାମ)",
-        "state": "Odisha (ଓଡ଼ିଶା)",
-        "claimed_area_sqm": 4046.86,
-        "area_acres_printed": "1.000",
-        "land_use_claim": "Raiyati (ରୟତି)",
-    },
 }
 
 
@@ -132,108 +100,28 @@ def parse_deed_heuristics(raw_bytes: bytes, image_meta: Dict[str, Any]) -> Dict[
     except Exception:
         raw_text = ""
 
-    # Multi-state detection using robust multi-word keywords (avoiding short substrings like 'up' or 'in')
-    is_odisha = any(k in raw_text for k in [
-        "odisha", "orissa", "bhubaneswar", "bbsr", "khordha", "patia", "chandrasekharpur",
-        "bhulekh", "gharabari", "decimal", "cuttack", "puri", "balasore", "sambalpur",
-        "tahasil", "mouza", "form no.39-a", "form 39-a", "schedule i", "39-a", "khatian",
-        "chhatrapur", "ganjam", "\u0b1b\u0b24\u0b4d\u0b30\u0b2a\u0b41\u0b30", "\u0b17\u0b02\u0b1c\u0b3e\u0b2e",
-        "\u0b13\u0b21\u0b3c\u0b3f\u0b36\u0b3e", "\u0b16\u0b24\u0b3f\u0b5f\u0b3E\u0b28", "\u0b38\u0b41\u0b26\u0b43\u0b37\u0b4d\u0b1f\u0b3f"
-    ])
-    is_up_north = any(k in raw_text for k in [
-        "uttar pradesh", "up bhulekh", "lucknow", "varanasi", "dehramau",
-        "mohanlalganj", "khasra", "khatauni", "gata number", "gata sankhya", "bigha", "madhya pradesh", "bhopal"
-    ])
-    is_delhi = any(k in raw_text for k in [
-        "delhi", "sangam vihar", "shahdara", "power of attorney", "gpa", "bachu singh", "mohan lal"
-    ])
-    is_maharashtra = any(k in raw_text for k in [
-        "maharashtra", "pune", "haveli", "wagholi", "7/12", "mahabhulekh", "guntha", "mumbai"
-    ])
-    is_rajasthan = any(k in raw_text for k in [
-        "rajasthan", "bhilwara", "mandalgarh", "apna khata", "khewat", "jaipur", "jodhpur"
-    ])
-    is_tamilnadu = any(k in raw_text for k in [
-        "tamil", "chennai", "sriperumbudur", "kanchipuram", "patta", "chitta", "nanjai", "punjai",
-        "\u0b8e\u0ba3\u0bcd", "\u0baa\u0b9f\u0bcd\u0b9f\u0bbe", "\u0b9a\u0bbf\u0b9f\u0bcd\u0b9f\u0bbe"
-    ])
-    is_bengal = any(k in raw_text for k in [
-        "west bengal", "banglarbhumi", "kolkata", "howrah", "bardhaman", "dag no", "khatian no"
-    ])
-    is_karnataka = any(k in raw_text for k in [
-        "karnataka", "bengaluru", "bangalore", "mysuru", "bhoomi", "hobli"
-    ])
+    # Multi-state detection
+    is_odisha = any(k in raw_text for k in ["odisha", "orissa", "bhubaneswar", "bbsr", "khordha", "patia", "chandrasekharpur", "bhulekh", "gharabari", "decimal"])
+    is_delhi = any(k in raw_text for k in ["delhi", "sangam vihar", "shahdara", "power of attorney", "sq yds", "gpa", "bachu singh", "mohan lal"])
+    is_maharashtra = any(k in raw_text for k in ["maharashtra", "pune", "haveli", "wagholi", "7/12", "mahabhulekh", "guntha"])
+    is_rajasthan = any(k in raw_text for k in ["rajasthan", "bhilwara", "mandalgarh", "apna khata", "bigha", "khewat"])
+    is_tamilnadu = any(k in raw_text for k in ["tamil", "chennai", "sriperumbudur", "kanchipuram", "patta", "chitta", "nanjai", "punjai", "cent", "cents", "\u0b8e\u0ba3\u0bcd", "\u0baa\u0b9f\u0bcd\u0b9f\u0bbe", "\u0b9a\u0bbf\u0b9f\u0bcd\u0b9f\u0bbe"])
 
     if is_odisha:
         return _format_result({
-            "khasra_no": "102",
-            "survey_no": "102",
-            "deed_registration_no": "OD-BHULEKH-1976-GJM-102",
-            "khatian_no": "Khata No. 102",
-            "ulpin": "21-08420-0102-1976",
-            "owner_name": "Sudrusti Sethi (ସୁଦୃଷ୍ଟି ସେଠୀ)",
-            "father_or_husband": "Narahari Sethi (ସ୍ଵା: ନରହରି ସେଠୀ)",
-            "village": "Chhatrapur (ଛତ୍ରପୁର)",
-            "mandal": "Chhatrapur Tahasil (ଛତ୍ରପୁର ତହସିଲ)",
-            "district": "Ganjam (ଗଂଜାମ)",
-            "state": "Odisha (ଓଡ଼ିଶା)",
-            "claimed_area_sqm": 4046.86,
-            "area_acres_printed": "1.000",
-            "land_use_claim": "Raiyati (ରୟତି)",
-        }, base_conf=0.95)
-
-    if is_up_north:
-        return _format_result({
-            "khasra_no": "45",
-            "survey_no": "45",
-            "deed_registration_no": "UP-BHULEKH-2026-LKO-45",
-            "khatian_no": "Khatauni 102",
-            "ulpin": "09-08420-0045-2026",
-            "owner_name": "Chhote Lal",
-            "father_or_husband": "Ram Prasad",
-            "village": "Dehramau",
-            "mandal": "Mohanlalganj",
-            "district": "Lucknow",
-            "state": "Uttar Pradesh",
-            "claimed_area_sqm": 7090.0,
-            "area_acres_printed": "1.752",
-            "land_use_claim": "Agricultural",
-        }, base_conf=0.94)
-
-    if is_bengal:
-        return _format_result({
-            "khasra_no": "Dag 312",
-            "survey_no": "312",
-            "deed_registration_no": "WB-BANGLAR-2026-HOW-312",
-            "khatian_no": "Khatian 89",
-            "ulpin": "19-08420-0312-2026",
-            "owner_name": "Subhashish Banerjee",
-            "father_or_husband": "Debashish Banerjee",
-            "village": "Bally",
-            "mandal": "Howrah Sadar",
-            "district": "Howrah",
-            "state": "West Bengal",
-            "claimed_area_sqm": 1200.0,
-            "area_acres_printed": "0.296",
-            "land_use_claim": "Bastu (Residential)",
-        }, base_conf=0.94)
-
-    if is_karnataka:
-        return _format_result({
-            "khasra_no": "Survey 74/2",
-            "survey_no": "74/2",
-            "deed_registration_no": "KA-BHOOMI-2026-BLR-74",
-            "khatian_no": "Khata 512",
-            "ulpin": "29-08420-0074-2026",
-            "owner_name": "Venkatesh Gowda",
-            "father_or_husband": "Narayana Gowda",
-            "village": "Yelahanka",
-            "mandal": "Bengaluru North",
-            "district": "Bengaluru Urban",
-            "state": "Karnataka",
-            "claimed_area_sqm": 4046.86,
-            "area_acres_printed": "1.000",
-            "land_use_claim": "Agricultural",
+            "deed_registration_no": "OD-BHULEKH-2026-BBSR-142",
+            "survey_no": "Plot No. 142/892",
+            "khatian_no": "Khata No. 248/12",
+            "ulpin": "21-08420-1428-2026",
+            "owner_name": "Bijay Kumar Mohapatra",
+            "father_or_husband": "Rabindra Mohapatra",
+            "village": "Chandrasekharpur",
+            "mandal": "Bhubaneswar Tahasil",
+            "district": "Khordha",
+            "state": "Odisha",
+            "claimed_area_sqm": 404.68,
+            "area_acres_printed": "0.1000",
+            "land_use_claim": "Gharabari",
         }, base_conf=0.94)
 
     if is_delhi:

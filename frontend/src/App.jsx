@@ -16,7 +16,6 @@ import MutationsView from './components/MutationsView';
 import RiskTimeline from './components/RiskTimeline';
 import DemoWalkthrough from './components/DemoWalkthrough';
 import ConsentDialog, { hasAcceptedConsent, recordDecline, clearConsent } from './components/ConsentDialog';
-import OdishaBhulekhModal from './components/OdishaBhulekhModal';
 import { Shield, Scale, FileCheck, Lock } from 'lucide-react';
 
 export default function App() {
@@ -43,7 +42,6 @@ export default function App() {
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showFraudAlertModal, setShowFraudAlertModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [showOdishaModal, setShowOdishaModal] = useState(false);
   const [parcelsData, setParcelsData] = useState(null);
   const [selectedParcel, setSelectedParcel] = useState(null);
   const [showDemoWalkthrough, setShowDemoWalkthrough] = useState(false);
@@ -175,20 +173,12 @@ export default function App() {
             currentUser={currentUser}
             onOpenLoginModal={() => setShowLoginModal(true)}
             onLogout={handleLogout}
-            onOpenOdishaModal={() => setShowOdishaModal(true)}
           />
 
           {/* Status Tier Modal */}
           <StatusModal
             isOpen={showStatusModal}
             onClose={() => setShowStatusModal(false)}
-          />
-
-          {/* Odisha Bhulekh RoR Intelligence Modal */}
-          <OdishaBhulekhModal
-            isOpen={showOdishaModal}
-            onClose={() => setShowOdishaModal(false)}
-            onLocateOnMap={handleSelectParcelById}
           />
 
           {/* Official Portal Sign In Modal */}

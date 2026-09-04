@@ -5,7 +5,7 @@ export default function StatusModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   const modules = [
-    { name: 'Engine 1: Registry OCR', tag: 'REAL (Narrow) / FALLBACK', detail: 'PaddleOCR / Regex layout parser extracting Telangana Dharani deeds', color: 'emerald' },
+    { name: 'Engine 1: Multi-Language Registry OCR', tag: 'REAL (OCR.Space Indic Engine)', detail: 'OCR.Space API Engine 2 processing Hindi, Telugu, Tamil, Kannada, Marathi, Gujarati, Bengali, Punjabi, Malayalam, and English land records', color: 'emerald' },
     { name: 'Engine 2: GIS Validation', tag: 'REAL', detail: 'In-memory Shapely STRtree topology checks + scikit-learn Isolation Forest (Zero SpatiaLite extension)', color: 'emerald' },
     { name: 'Engine 3: Ownership Intelligence', tag: 'RULE-STUB', detail: 'Rapid resale frequency (>3 transfers in <30 days) and title graph analysis', color: 'amber' },
     { name: 'Engine 4: Satellite Cross-Check', tag: 'RULE-STUB / MOCK', detail: 'Pre-downloaded Sentinel-2 Shamshabad/Mamidipally scene (zero live API calls)', color: 'amber' },
@@ -16,7 +16,7 @@ export default function StatusModal({ isOpen, onClose }) {
   ];
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
       <div className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-2xl w-full p-6 shadow-2xl relative">
         <button
           onClick={onClose}

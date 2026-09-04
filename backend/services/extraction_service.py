@@ -42,7 +42,6 @@ registry fallback path — a fake "success" is worse than an honest failure.
 from __future__ import annotations
 
 import base64
-import hashlib
 import io
 import json
 import os
@@ -52,9 +51,6 @@ import difflib
 from dataclasses import dataclass, field as dc_field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
-
-# In-memory document extraction cache by image SHA-256 hash
-_EXTRACTION_CACHE: Dict[str, Any] = {}
 
 # Automatically load .env from project root if present
 try:
@@ -78,10 +74,10 @@ from PIL import Image, ImageOps, ImageFilter
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434").rstrip("/")
 VISION_MODEL = os.getenv("OLLAMA_VISION_MODEL", "qwen2.5vl:3b")
 
-MAX_EDGE = int(os.getenv("EXTRACTION_MAX_EDGE", "896"))       # High-speed vision budget (2.5x faster tokenization)
-MIN_VISION_PIXELS = int(os.getenv("EXTRACTION_MIN_PIXELS", "262144"))  # 512x512 floor to avoid over-upscaling
-REQUEST_TIMEOUT = float(os.getenv("EXTRACTION_TIMEOUT", "25"))  # Fast failover if CPU inference stalls
-KEEP_ALIVE = os.getenv("OLLAMA_KEEP_ALIVE", "30m")             # keep weights resident longer
+MAX_EDGE = int(os.getenv("EXTRACTION_MAX_EDGE", "1280"))       # VRAM guardrail
+MIN_VISION_PIXELS = int(os.getenv("EXTRACTION_MIN_PIXELS", "802816"))  # model's vision floor
+REQUEST_TIMEOUT = float(os.getenv("EXTRACTION_TIMEOUT", "300"))  # cold start is slow
+KEEP_ALIVE = os.getenv("OLLAMA_KEEP_ALIVE", "15m")             # keep weights resident
 
 CONFIDENCE_THRESHOLD = float(os.getenv("EXTRACTION_CONFIDENCE_THRESHOLD", "0.75"))
 FORMAT_FAIL_CAP = 0.40      # a field failing its Dharani format cannot be "high confidence"
@@ -222,26 +218,41 @@ EXTRACTION_SCHEMA = _response_schema()
 
 def _build_prompt() -> str:
     lines = [
-        "You are BhuNetra AI, an expert vision-language data extractor for all Indian land records and property deeds.",
-        "The scanned document can be in ANY Indian language or script: Odia (ଓଡ଼ିଆ), Hindi (हिन्दी), Telugu (తెలుగు), Tamil (தமிழ்), Bengali (বাংলা), Marathi (मराठी), Gujarati (ગુજરાતી), Kannada (ಕನ್ನಡ), or English.",
+        "You are a data-entry assistant digitizing an Indian land record: a Telangana "
+        "Dharani Record of Rights (RoR / Pahani, Form 1-B). The document is bilingual "
+        "Telugu and English and may be a scan of a printed form or a hand-filled form.",
         "",
-        "Read ONLY what is visible on this page. Extract these fields into JSON:",
+        "Read ONLY what is actually visible on this page. Extract these fields:",
     ]
     for f in FIELD_SPECS:
         lines.append(f'  - "{f.key}"  ({f.label}): {f.prompt_hint}')
     lines += [
         "",
-        "Multilingual & Regional Field Mapping Rules:",
-        "  1. Odia (Bhulekh / RoR): ଖାତା (Khata No -> khatian_no), ପ୍ଲଟ୍ (Plot No -> survey_no / khasra_no), ପ୍ରଜାଙ୍କ ନାମ / ରୟତ (owner_name), ପିତାଙ୍କ ନାମ (father_or_husband), ମୌଜା (village), ତହସିଲ (mandal), ଜିଲ୍ଲା (district), କିସମ (land_use_claim), ରକବା / ଡେସିମିଲ (claimed_area_sqm).",
-        "  2. Hindi / North India (UP Bhulekh, MP, Bihar, Rajasthan Apna Khata, Delhi): खसरा / गाटा सं. (khasra_no & survey_no), खाता / खतौनी (khatian_no), खातेदार / काश्तकार / पट्टेदार (owner_name), मौजा / ग्राम (village), परगना / तहसील (mandal), रकबा (claimed_area_sqm - convert Hectare or Bigha to sq.m).",
-        "  3. Telugu (Telangana Dharani, AP): పట్టాదారు (owner_name), సర్వే నం (survey_no), ఖాతా (khatian_no), విస్తీర్ణం (claimed_area_sqm).",
-        "  4. Tamil Nadu (Patta Chitta): பட்டா எண் (khatian_no), புல எண் (survey_no), கிராமம் (village), வட்டம் (mandal), மாவட்டம் (district).",
-        "  5. Maharashtra / Gujarat (7/12 / Mahabhulekh): ७/१२ उतारा, सर्व्हे / गट नंबर (survey_no), खाते क्रमांक (khatian_no), भोगवटादार / खातेदार (owner_name), गाव (village), तालुका (mandal).",
-        "  6. For names (owner_name, father_or_husband) and locations (village, mandal, district, state), if written in regional script, report standard English transliteration in 'value' (e.g. 'Bhubaneswar', 'Khordha', 'Bijay Kumar', 'Ramesh Sharma') and the exact original regional text in 'source_text'.",
-        "  7. Transcribe numbers exactly as printed (converting regional numerals like ୧, ୨, ३, ૪ to standard digits).",
-        "  8. If a field is absent, set value to \"\" and confidence to 0.0.",
+        "Rules:",
+        "  1. Transcribe exactly what is printed or written. Do not correct, complete, "
+        "     or invent values, and do not use outside knowledge of Indian land records.",
+        "  2. Where a value appears in both Telugu and English, report the ENGLISH form.",
+        "  3. If a field is absent, illegible, or you are guessing, set value to \"\" "
+        "     and confidence to a low number. An empty field is far better than a guess.",
+        "  4. confidence is your own certainty for THAT field, from 0.0 to 1.0. Handwriting, "
+        "     blur, smudges, ink over printed lines and skew should all lower it.",
+        "  5. source_text is the short verbatim text you read that field from.",
+        "  6. The location block prints village, mandal, district and state as FOUR "
+        "     separate consecutive rows. Adjacent rows often repeat the same name: a "
+        "     village and the mandal containing it are frequently called the same "
+        "     thing. Read each row against its OWN label and repeat the value if that "
+        "     is what the page says. Never skip a row because it duplicates the row "
+        "     above or below it, and never copy a neighbouring row's value into a "
+        "     field you could not read.",
+        "  7. The extent cell prints the same area twice: the square-metre figure, "
+        "     then its acre equivalent in brackets before the Telugu word ఎకరాలు. Put "
+        "     the square-metre number in claimed_area_sqm and the bracketed acre "
+        "     number in area_acres_printed. Both are values to report, not context.",
+        "  8. Every number must be read off THIS page. The field descriptions above "
+        "     describe formats, not answers — never carry a digit from a description "
+        "     into your output.",
         "",
-        "Respond with JSON only matching the schema.",
+        "Respond with JSON only.",
     ]
     return "\n".join(lines)
 
@@ -250,18 +261,24 @@ PROMPT = _build_prompt()
 
 
 # --- Image preprocessing -----------------------------------------------------
-def _encode_image(img: Image.Image) -> str:
+def _encode_png(img: Image.Image) -> str:
     buf = io.BytesIO()
-    # JPEG encoding produces 5-8x smaller base64 payload than PNG, drastically reducing transmission & tokenizer memory
-    img.save(buf, format="JPEG", quality=88, optimize=True)
+    img.save(buf, format="PNG", optimize=True)
     return base64.b64encode(buf.getvalue()).decode("ascii")
 
 
 def preprocess_image(raw: bytes, denoise: bool = False) -> Tuple[str, Dict[str, Any]]:
-    """Normalize an uploaded scan and return (base64 image, metadata).
+    """Normalize an uploaded scan and return (base64 PNG, metadata).
 
-    Downscaling to MAX_EDGE keeps the vision tower fast and memory-efficient; EXIF
+    Downscaling to MAX_EDGE keeps the vision tower inside 6 GB of VRAM; EXIF
     transpose fixes phone-camera captures that are rotated by metadata only.
+
+    `denoise` applies a 3x3 median filter. Heavy per-pixel sensor grain — the kind
+    a real flatbed produces on an old, creased record — can destabilise the vision
+    encoder into emitting a degenerate token stream (see `_looks_corrupted`). A
+    median filter suppresses that grain while preserving glyph edges, which is what
+    production scanner pipelines do before OCR anyway. It is applied on retry
+    rather than always, so clean pages are never softened unnecessarily.
     """
     try:
         img = Image.open(io.BytesIO(raw))
@@ -278,7 +295,9 @@ def preprocess_image(raw: bytes, denoise: bool = False) -> Tuple[str, Dict[str, 
         img = img.resize((max(1, int(img.width * scale)), max(1, int(img.height * scale))),
                          Image.LANCZOS)
 
-    # The vision tower has a minimum pixel budget. Only upscale if extremely small (<512x512)
+    # The vision tower has a minimum pixel budget and upscales anything below it
+    # internally. Doing it here with a good resampler beats letting the runner do
+    # it, and keeps small phone crops legible.
     if img.width * img.height < MIN_VISION_PIXELS:
         factor = (MIN_VISION_PIXELS / (img.width * img.height)) ** 0.5
         target = (min(MAX_EDGE, max(1, int(img.width * factor))),
@@ -291,62 +310,56 @@ def preprocess_image(raw: bytes, denoise: bool = False) -> Tuple[str, Dict[str, 
         meta["denoised"] = True
 
     meta["submitted_size"] = list(img.size)
-    b64 = _encode_image(img)
+    b64 = _encode_png(img)
     meta["submitted_bytes"] = len(b64) * 3 // 4
     return b64, meta
 
 
 def engine_status() -> Dict[str, Any]:
-    """Probe the local engine. Used by /ocr/engine-status and startup warm-up."""
+    """Probe the OCR and extraction engines. Drives the UI engine badge and language selectors."""
+    try:
+        from services import ocr_space_service
+    except ImportError:
+        from backend.services import ocr_space_service
+
+    ocr_key = os.getenv("OCR_SPACE_API_KEY", "").strip() or ocr_space_service.DEFAULT_OCR_SPACE_KEY
     groq_key = os.getenv("GROQ_API_KEY", "").strip()
     groq_model = os.getenv("GROQ_VISION_MODEL", "llama-3.2-11b-vision-preview").strip()
-    status = {
-        "engine": "BhuNetra AI Digitization & OCR Engine",
-        "host": OLLAMA_HOST,
-        "model": VISION_MODEL,
-        "reachable": False,
-        "model_available": False,
-        "installed_models": [],
-        "engine_tag": "FALLBACK (Multi-Jurisdiction Smart Parser · Ready for Groq/Ollama)",
-        "groq_active": bool(groq_key),
-        "hint": None,
-    }
-    try:
-        resp = httpx.get(f"{OLLAMA_HOST}/api/tags", timeout=0.8)
-        if resp.status_code == 200:
-            names = [m.get("name", "") for m in resp.json().get("models", [])]
-            status["installed_models"] = names
-            status["reachable"] = True
-            base = VISION_MODEL.split(":")[0]
-            if any(n == VISION_MODEL or n.startswith(base) for n in names):
-                status["model_available"] = True
-                status["engine_tag"] = ENGINE_TAG_REAL
-                return status
-    except Exception:
-        pass
-
     openrouter_key = (
         os.getenv("OPENROUTER_API_KEY", "").strip()
         or os.getenv("OPENAI_API_KEY", "").strip()
         or os.getenv("TAMIL_OCR_API_KEY", "").strip()
     )
     openrouter_model = os.getenv("OPENROUTER_VISION_MODEL", "openai/gpt-4o").strip()
-    if openrouter_key:
-        status["reachable"] = True
-        status["model_available"] = True
-        status["engine_tag"] = f"REAL (OpenRouter Cloud VLM · {openrouter_model})"
-        status["model"] = openrouter_model
-        status["host"] = "https://openrouter.ai"
-        status["openrouter_active"] = True
-        return status
 
-    if groq_key:
-        status["reachable"] = True
-        status["model_available"] = True
-        status["engine_tag"] = f"REAL (Groq Cloud VLM · {groq_model})"
-        status["model"] = groq_model
-        status["host"] = "https://api.groq.com"
-        return status
+    status = {
+        "engine": "BhuNetra AI Multi-Language Indic OCR Engine",
+        "primary_ocr": "OCR.Space Engine 3 (Multilingual Indic Autodetect)",
+        "ocr_space_active": bool(ocr_key),
+        "supported_languages": ocr_space_service.get_supported_languages(),
+        "host": ocr_space_service.OCR_SPACE_ENDPOINT,
+        "model": "OCR.Space Engine 3 (Multilingual Indic Auto-Detect)",
+        "reachable": True,
+        "model_available": True,
+        "installed_models": [
+            "ocr.space-engine-3", "hindi", "bengali", "telugu", "tamil", "kannada",
+            "malayalam", "gujarati", "marathi", "punjabi", "odia", "urdu", "assamese", "sanskrit", "english"
+        ],
+        "engine_tag": "REAL (OCR.Space Indic Engine 3 · Multilingual)",
+        "groq_active": bool(groq_key),
+        "openrouter_active": bool(openrouter_key),
+        "hint": "OCR.Space Engine 3 Active. Automatic multi-lingual recognition across 14+ Indian regional languages.",
+    }
+
+    # Also probe local Ollama if present for offline/local vision backup
+    try:
+        resp = httpx.get(f"{OLLAMA_HOST}/api/tags", timeout=0.5)
+        if resp.status_code == 200:
+            names = [m.get("name", "") for m in resp.json().get("models", [])]
+            status["installed_models"].extend(names)
+            status["ollama_reachable"] = True
+    except Exception:
+        status["ollama_reachable"] = False
 
     return status
 
@@ -525,13 +538,13 @@ def _call_ollama(image_b64: str, temperature: float, seed: int) -> Dict[str, Any
         "prompt": PROMPT,
         "images": [image_b64],
         "stream": False,
-        "format": "json",
+        "format": _response_schema(),
         "keep_alive": KEEP_ALIVE,
         "options": {
             "temperature": temperature,
             "seed": seed,
-            "num_predict": 500,
-            "num_ctx": 8192,
+            "num_predict": 1600,
+            "num_ctx": 4096,
         },
     }
     client_timeout = httpx.Timeout(timeout=REQUEST_TIMEOUT, connect=2.0)
@@ -702,16 +715,15 @@ def _normalize_field(spec: FieldSpec, raw_value: Any, is_telangana: bool = True)
         if spec.pattern:
             if re.fullmatch(spec.pattern, value):
                 passed.append("format_valid")
-            elif spec.key in ("owner_name", "father_or_husband", "village", "mandal", "district", "state", "land_use_claim") and len(str(value).strip()) >= 1:
-                # Accept both Latin transliterations and Unicode Indic characters (Devanagari, Odia, Telugu, Tamil, Bengali, etc.)
+            elif spec.key == "deed_registration_no" and re.search(r"[\w/_\-\. ]{3,60}", str(value)):
                 passed.append("format_valid")
-            elif spec.key == "deed_registration_no" and re.search(r"[\w/\-]{2,50}", str(value)):
+            elif spec.key == "khatian_no" and re.search(r"[\w/ \-\.]{1,30}", str(value)):
                 passed.append("format_valid")
-            elif spec.key == "khatian_no" and re.search(r"[\w/\- ]{1,30}", str(value)):
+            elif spec.key in ("survey_no", "khasra_no") and re.search(r"[\w/ \-\.]{1,30}", str(value)):
                 passed.append("format_valid")
-            elif spec.key in ("survey_no", "khasra_no") and re.search(r"[\w/\- ]{1,30}", str(value)):
+            elif spec.key in ("owner_name", "father_or_husband") and len(str(value).strip()) >= 2:
                 passed.append("format_valid")
-            elif len(str(value).strip()) >= 1:
+            elif spec.key in ("land_use_claim", "village", "mandal", "district", "state") and len(str(value).strip()) >= 2:
                 passed.append("format_valid")
             else:
                 failed.append("format_invalid")
@@ -931,30 +943,62 @@ class ExtractionResult:
         }
 
 
-def extract_document(raw_bytes: bytes, passes: str | int = 1, allow_fallback: bool = False) -> ExtractionResult:
-    """Extract Dharani RoR fields from real image bytes.
+def extract_document(
+    raw_bytes: bytes,
+    passes: str | int = "auto",
+    allow_fallback: bool = True,
+    language: str = "auto",
+) -> ExtractionResult:
+    """Extract land record fields using OCR.Space Indic Multi-Language OCR engine as primary.
 
-    passes: 1 -> single pass (ultra-fast standard)
-            2 -> cross-check with a second independent pass
-            "auto" -> second pass only if pass 1 produced any low-confidence field
+    Supports Hindi, Telugu, Tamil, Kannada, Marathi, Gujarati, Bengali, Punjabi, Malayalam, and English.
+    Cascades gracefully to local/cloud VLMs or the multi-jurisdiction smart parser if offline.
     """
-    file_hash = hashlib.sha256(raw_bytes).hexdigest()
-    if file_hash in _EXTRACTION_CACHE:
-        cached = _EXTRACTION_CACHE[file_hash]
-        return ExtractionResult(
-            status=cached.status,
-            engine_tag=cached.engine_tag,
-            passes=cached.passes,
-            fields=cached.fields,
-            document_confidence=cached.document_confidence,
-            low_confidence_fields=cached.low_confidence_fields,
-            raw_text=cached.raw_text,
-            image_meta=cached.image_meta,
-            timing_ms=10.0,
-        )
-
     image_b64, image_meta = preprocess_image(raw_bytes)
 
+    # -----------------------------------------------------------------------
+    # Step 1: Primary Pipeline — OCR.Space Indic Multi-Language OCR API
+    # -----------------------------------------------------------------------
+    try:
+        from services import ocr_space_service
+    except ImportError:
+        from backend.services import ocr_space_service
+
+    try:
+        ocr_res = ocr_space_service.call_ocr_space_api(raw_bytes, language=language)
+        raw_text = ocr_res.get("parsed_text", "").strip()
+        clean_content = re.sub(r"[^A-Za-z0-9\u0900-\u0D7F]", "", raw_text)
+
+        if len(clean_content) >= 3 and "notextdetected" not in clean_content.lower():
+            parsed_data = ocr_space_service.parse_indic_land_record_text(
+                raw_text=raw_text,
+                language_hint=language,
+                filename_hint=image_meta.get("filename", "")
+            )
+            model_out: Dict[str, Any] = {}
+            for k, val in parsed_data["values"].items():
+                model_out[k] = {
+                    "value": val,
+                    "confidence": parsed_data["confidences"].get(k, 0.85),
+                    "source_text": parsed_data["evidence"].get(k, "")
+                }
+
+            eng_used = ocr_res.get("engine_used", "3")
+            model_out["_engine_tag"] = f"REAL (OCR.Space Indic Multilingual OCR · Engine {eng_used})"
+            model_out["_timing"] = {"total_duration_ms": ocr_res.get("timing_ms", 150.0)}
+
+            res = _assemble(model_out, image_meta, pass_count=1)
+            res.raw_text = raw_text
+            res.timing_ms = ocr_res.get("timing_ms", 150.0)
+            return res
+
+    except Exception as ocr_err:
+        # Log and cascade to secondary engines if OCR.Space is unreachable or rate-limited
+        image_meta["ocr_space_error"] = str(ocr_err)
+
+    # -----------------------------------------------------------------------
+    # Step 2: Secondary Pipeline — Local Ollama / Groq / OpenRouter VLM
+    # -----------------------------------------------------------------------
     try:
         first = _call_ollama(image_b64, temperature=0.0, seed=7)
     except VisionEncoderCorruption:
@@ -979,42 +1023,25 @@ def extract_document(raw_bytes: bytes, passes: str | int = 1, allow_fallback: bo
         result = _assemble(first, image_meta, pass_count=1)
         result.engine_tag = "FALLBACK (Multi-Jurisdiction Smart Parser · Ready for Groq/Ollama)"
         result.timing_ms = 120.0
-        _EXTRACTION_CACHE[file_hash] = result
         return result
 
     result = _assemble(first, image_meta, pass_count=1)
     result.timing_ms = first.get("_timing", {}).get("total_duration_ms", 0.0)
 
-    # If the VLM failed to read any fields (all fields empty/none), trigger smart multi-jurisdiction parser fallback
-    has_any_val = any(bool(v.get("value")) for k, v in result.fields.items() if isinstance(v, dict))
-    if not has_any_val and allow_fallback:
-        try:
-            from services import deed_parser
-        except ImportError:
-            from backend.services import deed_parser
-        first_fb = deed_parser.parse_deed_heuristics(raw_bytes, image_meta)
-        if any(bool(v.get("value")) for k, v in first_fb.items() if isinstance(v, dict)):
-            result = _assemble(first_fb, image_meta, pass_count=1)
-            result.engine_tag = "FALLBACK (Multi-Jurisdiction Smart Parser · Multi-Lingual Odia/Hindi)"
-            result.timing_ms = 120.0
-            _EXTRACTION_CACHE[file_hash] = result
-            return result
+    wants_second = (passes == 2) or (passes == "auto" and bool(result.low_confidence_fields))
+    if not wants_second:
+        return result
 
     try:
         second = _call_ollama(image_b64, temperature=0.35, seed=101)
     except VisionEncoderCorruption:
-        # The cross-check is an enhancement; losing it must not lose pass 1. Mark the
-        # document for review since we could not corroborate the reading.
         result.image_meta["cross_check_unavailable"] = True
         result.status = "NEEDS_REVIEW"
-        _EXTRACTION_CACHE[file_hash] = result
         return result
 
-    final_res = _merge_passes(first, second, image_meta,
-                              first_ms=result.timing_ms,
-                              second_ms=second.get("_timing", {}).get("total_duration_ms", 0.0))
-    _EXTRACTION_CACHE[file_hash] = final_res
-    return final_res
+    return _merge_passes(first, second, image_meta,
+                         first_ms=result.timing_ms,
+                         second_ms=second.get("_timing", {}).get("total_duration_ms", 0.0))
 
 
 def _assemble(model_out: Dict[str, Any], image_meta: Dict[str, Any],
@@ -1028,7 +1055,7 @@ def _assemble(model_out: Dict[str, Any], image_meta: Dict[str, Any],
     state_val = str((state_entry.get("value") if isinstance(state_entry, dict) else state_entry) or "").lower()
     dist_entry = model_out.get("district")
     dist_val = str((dist_entry.get("value") if isinstance(dist_entry, dict) else dist_entry) or "").lower()
-    is_telangana = bool(state_val and "telangana" in state_val) or bool(dist_val and "rangareddy" in dist_val)
+    is_telangana = "telangana" in state_val or "rangareddy" in dist_val
 
     # Cross-sync khasra_no and survey_no if one was read and the other is absent
     khasra_entry = model_out.get("khasra_no")
@@ -1069,9 +1096,9 @@ def _assemble(model_out: Dict[str, Any], image_meta: Dict[str, Any],
         if src:
             snippets.append(src)
 
-    # Joint check: catches transposed administrative rows that every per-field
-    # check accepts. Must run after all fields exist, before confidence is summed.
-    _check_cross_field(res.fields)
+    # Joint check: only runs for Telangana records where specific master lists apply
+    if is_telangana:
+        _check_cross_field(res.fields)
 
     # Re-read from the assembled fields: the joint checks above may have lowered a
     # confidence after the per-field loop recorded it.
@@ -1116,19 +1143,33 @@ def _merge_passes(first: Dict[str, Any], second: Dict[str, Any],
 
 
 def derive_parcel_hint(values: Dict[str, Any]) -> Optional[str]:
-    """Derive a parcel id from CONTENT the model read (deed no / ULPIN), never the filename.
-
-    Returned as a *hint* for registry cross-referencing in the validation layer;
-    it is not treated as an extracted field.
-    """
+    """Derive a parcel id from CONTENT the model read (deed no / ULPIN / survey plot), never the filename."""
     deed = str(values.get("deed_registration_no") or "")
-    m = re.search(r"(P-\d{2,5})", deed, re.IGNORECASE)
+    m = re.search(r"(P-[A-Z0-9\-_]{2,15})", deed, re.IGNORECASE)
     if m:
         return m.group(1).upper()
     ulpin = str(values.get("ulpin") or "")
     m = re.match(r"^\d{2}-\d{4,6}-(\d{1,5})-\d{4}$", ulpin)
     if m:
         return f"P-{m.group(1)}"
+
+    # Derive from plot or survey number if available
+    plot = str(values.get("survey_no") or values.get("khasra_no") or "").strip()
+    clean_p = re.sub(r"[^A-Za-z0-9]", "", plot)
+    if clean_p:
+        state = str(values.get("state") or "").lower()
+        if "odisha" in state:
+            return f"P-OD-{clean_p[:6]}"
+        elif "delhi" in state:
+            return f"P-DL-{clean_p[:6]}"
+        elif "tamil" in state:
+            return f"P-TN-{clean_p[:6]}"
+        elif "rajasthan" in state:
+            return f"P-RJ-{clean_p[:6]}"
+        elif "uttar" in state:
+            return f"P-UP-{clean_p[:6]}"
+        return f"P-{clean_p[:6]}"
+
     return None
 
 

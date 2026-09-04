@@ -44,8 +44,18 @@ async def _read_upload(file: UploadFile) -> bytes:
 
 @router.get("/engine-status")
 def get_engine_status():
-    """Report whether the local extraction engine is live. Drives the UI engine badge."""
+    """Report whether the extraction engine is live and its supported Indian languages."""
     return {"success": True, "data": ex.engine_status()}
+
+
+@router.get("/languages")
+def get_supported_languages():
+    """Return the list of all supported Indian regional languages for OCR."""
+    try:
+        from services import ocr_space_service
+    except ImportError:
+        from backend.services import ocr_space_service
+    return {"success": True, "data": ocr_space_service.get_supported_languages()}
 
 
 @router.post("/warm")
@@ -57,20 +67,21 @@ def warm():
 @router.post("/extract")
 async def extract_deed(
     file: UploadFile = File(...),
-    passes: str = Query("1", pattern="^(1|2|auto)$",
+    passes: str = Query("auto", pattern="^(1|2|auto)$",
                         description="1 = fast single read, 2 = always cross-check, "
                                     "auto = second read only when confidence is low"),
+    language: str = Query("auto", description="Indic language code (auto, hin, tel, tam, kan, mar, guj, ben, pan, mal, urd, eng)"),
 ):
-    """Extract Dharani RoR fields from a scanned or photographed land record."""
+    """Extract land record fields from a scanned or photographed land record using OCR.Space Indic Engine."""
     contents = await _read_upload(file)
     passes_arg = int(passes) if passes in {"1", "2"} else "auto"
 
     try:
-        result = ex.extract_document(contents, passes=passes_arg, allow_fallback=True)
+        result = ex.extract_document(contents, passes=passes_arg, allow_fallback=True, language=language or "auto")
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except ex.ExtractionUnavailable as exc:
-        # Honest failure when neither VLM nor fallback could parse
+        # Honest failure when neither OCR.Space nor fallback could parse
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
     payload = result.to_dict()
@@ -91,13 +102,14 @@ async def extract_deed(
 
 
 @router.post("/process-deed", deprecated=True)
-async def process_scanned_deed(file: UploadFile = File(...)):
-    """Deprecated alias kept so the current UI keeps working until the frontend
-    restructure lands. Runs the same real extraction and flattens it to the old
-    response shape."""
+async def process_scanned_deed(
+    file: UploadFile = File(...),
+    language: str = Query("auto")
+):
+    """Deprecated alias kept so older components keep working. Runs OCR.Space Indic extraction."""
     contents = await _read_upload(file)
     try:
-        result = ex.extract_document(contents, passes=1)
+        result = ex.extract_document(contents, passes=1, allow_fallback=True, language=language or "auto")
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except ex.ExtractionUnavailable as exc:

@@ -127,24 +127,19 @@ class TamilNaduAdapter(StateAdapter):
             parcels.append(
                 CanonicalParcel(
                     parcel_id=d["parcel_id"],
-                    identifiers=[
-                        CanonicalIdentifier(type="survey_number", value=d["survey_no"], is_primary=True),
-                        CanonicalIdentifier(type="patta_number", value=d["patta_no"]),
-                        CanonicalIdentifier(type="ulpin", value=d["ulpin"])
-                    ],
-                    owners=[d["owner_name"]],
+                    state=d["state"],
+                    district=d["district"],
+                    subdistrict=d["taluk"],
+                    village=d["village"],
+                    identifier=CanonicalIdentifier(type="survey_number", value=d["survey_no"], is_primary=True),
+                    khata_number=d.get("patta_no"),
+                    owner_names=[d["owner_name"]],
                     area=AreaModel(
                         value=d["claimed_area_sqm"],
                         unit="sqm",
                         sqm_value=d["claimed_area_sqm"]
                     ),
                     land_use=d["land_use_claim"],
-                    location={
-                        "state": d["state"],
-                        "district": d["district"],
-                        "subdistrict": d["taluk"],
-                        "village": d["village"]
-                    },
                     geometry={
                         "type": "Point",
                         "coordinates": [d["lng"], d["lat"]]

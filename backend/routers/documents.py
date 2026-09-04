@@ -412,9 +412,14 @@ def get_document(doc_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/{doc_id}/extract", response_model=ExtractResponse)
-def extract_document(doc_id: int, passes: str = Query("1"), db: Session = Depends(get_db)):
+def extract_document(
+    doc_id: int,
+    passes: str = Query("auto"),
+    language: str = Query("auto", description="Indic language code"),
+    db: Session = Depends(get_db)
+):
     """
-    Re-run Engine 1 OCR extraction on a previously-uploaded document.
+    Re-run Engine 1 OCR extraction on a previously-uploaded document using OCR.Space Indic Engine.
 
     transitions: UPLOADED → EXTRACTED / NEEDS_REVIEW
     """
@@ -459,7 +464,7 @@ def extract_document(doc_id: int, passes: str = Query("1"), db: Session = Depend
 
     try:
         passes_arg = int(passes) if passes in {"1", "2"} else "auto"
-        result = ex.extract_document(raw_bytes, passes=passes_arg, allow_fallback=True)
+        result = ex.extract_document(raw_bytes, passes=passes_arg, allow_fallback=True, language=language or "auto")
     except ex.ExtractionUnavailable as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
@@ -501,6 +506,9 @@ def extract_document(doc_id: int, passes: str = Query("1"), db: Session = Depend
         engine_tag=result.engine_tag,
         passes=result.passes,
         timing_ms=result.timing_ms,
+        fields=result.fields,
+        extracted_fields=result_dict.get("values", {}),
+        raw_text=result.raw_text,
         uploaded_feature=up_feature,
     )
 

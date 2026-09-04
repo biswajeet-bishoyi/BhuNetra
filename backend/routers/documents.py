@@ -25,7 +25,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query, Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -41,6 +41,8 @@ class UploadResponse(BaseModel):
     status: str
     source_filename: str
     file_hash: str
+    preview_url: str | None = None
+    page_count: int = 1
     message: str
 
 
@@ -53,6 +55,8 @@ class ExtractResponse(BaseModel):
     engine_tag: str
     passes: int
     timing_ms: float
+    preview_url: str | None = None
+    page_count: int = 1
     fields: dict | None = None
     extracted_fields: dict | None = None
     raw_text: str | None = None
@@ -351,11 +355,20 @@ async def upload_document(file: UploadFile = File(...), db: Session = Depends(ge
     # Duplicate detection: if this exact file was already uploaded, return it instead.
     existing = db.query(Document).filter(Document.file_hash == fhash).first()
     if existing:
+        page_cnt = 1
+        if existing.source_filename.lower().endswith(".pdf"):
+            try:
+                import pypdfium2 as pdfium
+                page_cnt = len(pdfium.PdfDocument(data))
+            except Exception:
+                page_cnt = 1
         return UploadResponse(
             document_id=existing.id,
             status=existing.status,
             source_filename=existing.source_filename,
             file_hash=fhash,
+            preview_url=f"/api/documents/{existing.id}/page/1",
+            page_count=page_cnt,
             message=f"Document already registered (id={existing.id}, status={existing.status}).",
         )
 
@@ -369,13 +382,72 @@ async def upload_document(file: UploadFile = File(...), db: Session = Depends(ge
     db.commit()
     db.refresh(doc)
 
+    page_cnt = 1
+    if (file.filename or "").lower().endswith(".pdf") or data.startswith(b"%PDF"):
+        try:
+            import pypdfium2 as pdfium
+            page_cnt = len(pdfium.PdfDocument(data))
+        except Exception:
+            page_cnt = 1
+
     return UploadResponse(
         document_id=doc.id,
         status=doc.status,
         source_filename=doc.source_filename,
         file_hash=fhash,
+        preview_url=f"/api/documents/{doc.id}/page/1",
+        page_count=page_cnt,
         message=f"Document registered. Proceed to POST /documents/{doc.id}/extract to run OCR.",
     )
+
+
+@router.get("/{doc_id}/page/{page_num}")
+def get_document_page_image(doc_id: int, page_num: int = 1, db: Session = Depends(get_db)):
+    """Render and stream page {page_num} of a document (PDF or image) as a high-resolution PNG."""
+    import io
+    from PIL import Image, ImageOps
+
+    doc = db.query(Document).filter(Document.id == doc_id).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    data_dir = Path(__file__).parent.parent.parent / "data"
+    scan_path = data_dir / "uploads" / f"{doc.file_hash}_{doc.source_filename}"
+    if not scan_path.exists():
+        scan_path = data_dir / "synthetic" / "registry_scans" / doc.source_filename
+    if not scan_path.exists():
+        matches = list((data_dir / "synthetic" / "registry_scans").glob(f"*{doc.source_filename}*"))
+        if matches:
+            scan_path = matches[0]
+
+    if not scan_path.exists():
+        raise HTTPException(status_code=404, detail="Scan file not on disk")
+
+    raw_bytes = scan_path.read_bytes()
+
+    # 1. If PDF, render the requested page via pypdfium2
+    if raw_bytes.startswith(b"%PDF") or doc.source_filename.lower().endswith(".pdf"):
+        try:
+            import pypdfium2 as pdfium
+            pdf = pdfium.PdfDocument(raw_bytes)
+            idx = max(0, min(page_num - 1, len(pdf) - 1))
+            page = pdf[idx]
+            pil_img = page.render(scale=2.0).to_pil().convert("RGB")
+            buf = io.BytesIO()
+            pil_img.save(buf, format="PNG", optimize=True)
+            return Response(content=buf.getvalue(), media_type="image/png")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to render PDF page: {e}")
+
+    # 2. If image, return normalized PNG
+    try:
+        pil_img = Image.open(io.BytesIO(raw_bytes))
+        pil_img = ImageOps.exif_transpose(pil_img).convert("RGB")
+        buf = io.BytesIO()
+        pil_img.save(buf, format="PNG", optimize=True)
+        return Response(content=buf.getvalue(), media_type="image/png")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to load image: {e}")
 
 
 @router.get("/", response_model=DocumentListResponse)
@@ -506,6 +578,7 @@ def extract_document(
         engine_tag=result.engine_tag,
         passes=result.passes,
         timing_ms=result.timing_ms,
+        preview_url=f"/api/documents/{doc.id}/page/1",
         fields=result.fields,
         extracted_fields=result_dict.get("values", {}),
         raw_text=result.raw_text,

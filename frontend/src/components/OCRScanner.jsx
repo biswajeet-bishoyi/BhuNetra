@@ -123,6 +123,14 @@ export default function OCRScanner({ onSelectParcel }) {
   const [odishaModalOpen, setOdishaModalOpen] = useState(false);
   const [odishaError, setOdishaError] = useState(null);
 
+  // Photocopier Flatbed Scanner States
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageCount, setPageCount] = useState(1);
+  const [scanLaserActive, setScanLaserActive] = useState(true);
+  const [laserTheme, setLaserTheme] = useState('cyan'); // 'cyan' | 'emerald' | 'amber'
+  const [showBoundingBoxes, setShowBoundingBoxes] = useState(true);
+  const [scanKey, setScanKey] = useState(0);
+
   const handleFetchUPBhulekhHistory = async () => {
     if (!result || !result.values) return;
     setUpbhulekhLoading(true);
@@ -236,6 +244,12 @@ export default function OCRScanner({ onSelectParcel }) {
       }
       const uploadData = await uploadRes.json();
       setLifecycleDocId(uploadData.document_id);
+      if (uploadData.page_count) {
+        setPageCount(uploadData.page_count);
+      }
+      setCurrentPage(1);
+      const renderedUrl = uploadData.preview_url || `/api/documents/${uploadData.document_id}/page/1?t=${Date.now()}`;
+      setPreviewUrl(renderedUrl);
 
       // 2. Run extraction via the document lifecycle endpoint using OCR.Space Indic Engine
       const extractRes = await fetch(`/api/documents/${uploadData.document_id}/extract?passes=auto&allow_fallback=true&language=${lang}`, { method: 'POST' });
@@ -246,6 +260,9 @@ export default function OCRScanner({ onSelectParcel }) {
         return;
       }
       const extractData = await extractRes.json();
+      if (extractData.preview_url) {
+        setPreviewUrl(extractData.preview_url);
+      }
 
       // Build a result-like shape from the extraction response
       const r = {
@@ -288,8 +305,20 @@ export default function OCRScanner({ onSelectParcel }) {
     }
   }, [selectedLanguage]);
 
+  const handlePageChange = (newPage) => {
+    if (newPage < 1 || newPage > pageCount) return;
+    setCurrentPage(newPage);
+    if (lifecycleDocId) {
+      setPreviewUrl(`/api/documents/${lifecycleDocId}/page/${newPage}?t=${Date.now()}`);
+      setScanKey(prev => prev + 1);
+    }
+  };
+
   const handleSampleClick = async (sample) => {
     setPreviewUrl(`/static-data/synthetic/registry_scans/${sample.file}`);
+    setPageCount(1);
+    setCurrentPage(1);
+    setScanKey(prev => prev + 1);
     if (sample.lang) {
       setSelectedLanguage(sample.lang);
     }
@@ -305,7 +334,7 @@ export default function OCRScanner({ onSelectParcel }) {
   const handleFileUpload = async (e) => {
     const uploaded = e.target.files[0];
     if (!uploaded) return;
-    setPreviewUrl(URL.createObjectURL(uploaded));
+    setScanKey(prev => prev + 1);
     let fname = uploaded.name;
     if (selectedJurisdiction === 'odisha' && !fname.toLowerCase().includes('odisha')) {
       fname = `odisha_bhubaneswar_${fname}`;
@@ -403,36 +432,205 @@ export default function OCRScanner({ onSelectParcel }) {
           </div>
 
           {!previewUrl ? (
-            <label className="flex-1 min-h-[360px] border-2 border-dashed border-slate-700 hover:border-amber-500/50 rounded-xl flex flex-col items-center justify-center p-6 cursor-pointer bg-slate-900/40 hover:bg-slate-900/80 transition group">
-              <Upload className="w-10 h-10 text-slate-500 group-hover:text-amber-400 transition mb-3" />
-              <p className="text-sm font-bold text-slate-300">Drop a scanned deed or PDF document here</p>
-              <p className="text-xs text-slate-500 mt-1">PDF, PNG, JPG, TIFF, WEBP · printed or handwritten RoR pages</p>
-              <div className="flex items-center gap-2 mt-2">
-                <span className="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-bold">📄 PDF Supported</span>
-                <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">🖼️ High-Res Scans</span>
+            <label className="flex-1 min-h-[400px] border-2 border-dashed border-slate-700 hover:border-cyan-500/50 rounded-2xl flex flex-col items-center justify-center p-6 cursor-pointer bg-slate-900/40 hover:bg-slate-900/80 transition group relative overflow-hidden">
+              <div className="w-14 h-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center mb-3 group-hover:scale-110 transition shadow-lg shadow-cyan-500/10">
+                <Upload className="w-7 h-7 text-cyan-400 group-hover:text-cyan-300 transition" />
+              </div>
+              <p className="text-sm font-bold text-slate-200">Place document on Photocopier Glass Bed</p>
+              <p className="text-xs text-slate-400 mt-1">Upload PDF, PNG, JPG, TIFF, or WebP land records</p>
+              <div className="flex flex-wrap items-center justify-center gap-2 mt-3">
+                <span className="px-2.5 py-1 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-extrabold flex items-center gap-1">
+                  <span>📄</span> PDF Auto-Rasterizer (300 DPI)
+                </span>
+                <span className="px-2.5 py-1 rounded-md bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[10px] font-extrabold flex items-center gap-1">
+                  <span>⚡</span> Photocopier Laser Scanner
+                </span>
+                <span className="px-2.5 py-1 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-extrabold flex items-center gap-1">
+                  <span>🇮🇳</span> 14+ Indic Languages
+                </span>
               </div>
               <input type="file" onChange={handleFileUpload} accept="image/*,.pdf,application/pdf" className="hidden" />
             </label>
           ) : (
-            <div className="relative flex-1 min-h-[360px] bg-slate-950 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center p-3">
-              {previewUrl.toLowerCase().includes('.pdf') || previewUrl.startsWith('blob:') && previewUrl.includes('pdf') ? (
-                <div className="w-full h-full min-h-[400px] flex flex-col items-center justify-center bg-slate-900/90 rounded-lg p-4 text-center space-y-3">
-                  <FileText className="w-16 h-16 text-rose-400 animate-pulse" />
-                  <div>
-                    <h4 className="text-sm font-bold text-slate-200">PDF Land Document Loaded</h4>
-                    <p className="text-xs text-slate-400 mt-1">Multi-page Indic OCR & pypdfium2 Rasterizer active</p>
-                  </div>
-                  <iframe src={previewUrl} title="PDF Preview" className="w-full h-[320px] rounded-lg border border-slate-800 bg-white" />
+            <div className="flex-1 flex flex-col space-y-2">
+              {/* Photocopier Chassis Header Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className={`w-2.5 h-2.5 rounded-full ${
+                    scanLaserActive ? 'bg-cyan-400 animate-ping' : 'bg-slate-600'
+                  }`} />
+                  <span className="text-[11px] font-bold text-slate-200 flex items-center gap-1.5 font-mono">
+                    <span>🖨️ FLATBED PHOTOCOPIER</span>
+                    <span className="text-slate-500">|</span>
+                    <span className="text-cyan-400">{isExtracting ? 'SCANNING AT 300 DPI…' : 'OPTICAL PLATEN READY'}</span>
+                  </span>
                 </div>
-              ) : (
-                <img src={previewUrl} alt="Deed scan preview" className="max-h-[420px] object-contain rounded-lg shadow-xl" />
-              )}
-              <button
-                onClick={() => { setPreviewUrl(null); setResult(null); setError(null); setEdits({}); setStep(null); setLifecycleHash(null); setLifecycleDocId(null); }}
-                className="absolute top-4 right-4 px-3 py-1.5 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-xs font-bold text-slate-300 border border-slate-700 cursor-pointer shadow-lg z-10"
-              >
-                Clear / Upload Another
-              </button>
+
+                <div className="flex items-center gap-1.5">
+                  {/* Laser Beam Toggle */}
+                  <button
+                    onClick={() => setScanLaserActive(!scanLaserActive)}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold border transition cursor-pointer flex items-center gap-1 ${
+                      scanLaserActive
+                        ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40 shadow-sm'
+                        : 'bg-slate-900 text-slate-400 border-slate-800'
+                    }`}
+                    title="Toggle photocopier laser scanner beam"
+                  >
+                    <span>⚡ Laser: {scanLaserActive ? 'ON' : 'OFF'}</span>
+                  </button>
+
+                  {/* Re-Scan Button */}
+                  <button
+                    onClick={() => setScanKey(prev => prev + 1)}
+                    className="px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-800 text-amber-300 border border-amber-500/30 text-[10px] font-bold transition cursor-pointer flex items-center gap-1"
+                    title="Run fresh optical laser sweep"
+                  >
+                    <span>🔄 Sweep</span>
+                  </button>
+
+                  {/* Multi-Page Navigation if PDF has > 1 page */}
+                  {pageCount > 1 && (
+                    <div className="flex items-center gap-1 bg-slate-900 px-2 py-0.5 rounded border border-slate-800 text-[10px] font-bold">
+                      <button
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage <= 1}
+                        className="text-slate-400 hover:text-white disabled:opacity-30 cursor-pointer"
+                      >
+                        ◀
+                      </button>
+                      <span className="text-slate-200 font-mono">Pg {currentPage}/{pageCount}</span>
+                      <button
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage >= pageCount}
+                        className="text-slate-400 hover:text-white disabled:opacity-30 cursor-pointer"
+                      >
+                        ▶
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Clear / Eject Button */}
+                  <button
+                    onClick={() => { setPreviewUrl(null); setResult(null); setError(null); setEdits({}); setStep(null); setLifecycleHash(null); setLifecycleDocId(null); setCurrentPage(1); setPageCount(1); }}
+                    className="px-2 py-0.5 rounded bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-bold transition cursor-pointer"
+                  >
+                    Eject / New
+                  </button>
+                </div>
+              </div>
+
+              {/* Photocopier Glass Bed Platen with Rulers and Laser Beam */}
+              <div className="relative flex-1 min-h-[440px] bg-slate-950 rounded-2xl border-2 border-slate-800 overflow-hidden flex flex-col p-1 photocopier-glass shadow-2xl">
+                {/* Top Ruler Bar (X-axis in cm) */}
+                <div className="h-4 bg-slate-900/90 border-b border-slate-800 text-[8px] font-mono text-slate-500 flex items-center justify-between px-3 select-none">
+                  <span>0 cm (A4)</span>
+                  <span>| · | · 5 cm</span>
+                  <span>| · | · 10 cm</span>
+                  <span>| · | · 15 cm</span>
+                  <span>| · | · 20 cm</span>
+                  <span>21 cm ◥</span>
+                </div>
+
+                <div className="relative flex-1 flex items-center justify-center p-3 overflow-hidden">
+                  {/* Left Metric Ruler Line */}
+                  <div className="absolute left-1 top-2 bottom-2 w-3 text-[7px] font-mono text-slate-600 flex flex-col justify-between select-none pointer-events-none">
+                    <span>0</span>
+                    <span>5</span>
+                    <span>10</span>
+                    <span>15</span>
+                    <span>20</span>
+                    <span>25</span>
+                    <span>29.7</span>
+                  </div>
+
+                  {/* Corner Alignment Guides */}
+                  <div className="absolute top-2 left-5 text-slate-600 font-mono text-[10px] pointer-events-none select-none">┌ A4 ALIGN</div>
+                  <div className="absolute top-2 right-2 text-slate-600 font-mono text-[10px] pointer-events-none select-none">┐</div>
+                  <div className="absolute bottom-2 left-5 text-slate-600 font-mono text-[10px] pointer-events-none select-none">└</div>
+                  <div className="absolute bottom-2 right-2 text-slate-600 font-mono text-[10px] pointer-events-none select-none">┘ AUTO-CROP</div>
+
+                  {/* Rendered Deed Scan / First Page of PDF on Glass Platen */}
+                  <div className="relative max-h-[420px] max-w-[92%] shadow-[0_15px_40px_rgba(0,0,0,0.9)] rounded border border-slate-700/60 overflow-hidden bg-white">
+                    <img
+                      key={`img-${previewUrl}-${scanKey}-${currentPage}`}
+                      src={previewUrl}
+                      alt="Deed scan preview on photocopier glass"
+                      className="max-h-[420px] w-auto object-contain select-none"
+                    />
+
+                    {/* Photocopier Laser Scan Carriage Beam */}
+                    {scanLaserActive && (
+                      <div
+                        key={`laser-${scanKey}-${currentPage}`}
+                        className="absolute inset-x-0 pointer-events-none z-20 animate-photocopy-sweep"
+                        style={{ height: '36px' }}
+                      >
+                        {/* High-Intensity Laser Line */}
+                        <div className={`h-[3.5px] w-full ${
+                          laserTheme === 'emerald'
+                            ? 'bg-emerald-400 shadow-[0_0_15px_#10b981,0_0_30px_#10b981]'
+                            : laserTheme === 'amber'
+                            ? 'bg-amber-400 shadow-[0_0_15px_#f59e0b,0_0_30px_#f59e0b]'
+                            : 'bg-cyan-400 shadow-[0_0_18px_#06b6d4,0_0_35px_#38bdf8]'
+                        }`} />
+                        {/* Illuminated Carriage Lamp Optical Glow (Photocopy trailing light wash) */}
+                        <div className={`h-24 w-full ${
+                          laserTheme === 'emerald'
+                            ? 'bg-gradient-to-t from-emerald-500/35 via-emerald-500/15 to-transparent'
+                            : laserTheme === 'amber'
+                            ? 'bg-gradient-to-t from-amber-500/35 via-amber-500/15 to-transparent'
+                            : 'bg-gradient-to-t from-cyan-400/40 via-cyan-500/15 to-transparent'
+                        }`} />
+                      </div>
+                    )}
+
+                    {/* Simulated Real-Time AI Target Bounding Boxes */}
+                    {showBoundingBoxes && result && (
+                      <div className="absolute inset-0 pointer-events-none z-10">
+                        {/* Khasra / Survey Box */}
+                        <div className="absolute top-[18%] left-[8%] w-[42%] h-[8%] border border-cyan-400/80 bg-cyan-400/10 rounded flex items-start justify-end p-0.5 shadow-[0_0_8px_rgba(6,182,212,0.4)]">
+                          <span className="bg-cyan-950/90 text-cyan-300 font-mono text-[7px] font-bold px-1 rounded border border-cyan-500/40">
+                            {result.values?.khasra_no ? `Khasra ${result.values.khasra_no}` : 'Plot / Sy. No.'}
+                          </span>
+                        </div>
+
+                        {/* Owner / Pattadar Box */}
+                        <div className="absolute top-[28%] left-[8%] w-[58%] h-[9%] border border-emerald-400/80 bg-emerald-400/10 rounded flex items-start justify-end p-0.5 shadow-[0_0_8px_rgba(16,185,129,0.4)]">
+                          <span className="bg-emerald-950/90 text-emerald-300 font-mono text-[7px] font-bold px-1 rounded border border-emerald-500/40">
+                            {result.values?.owner_name ? `Owner: ${result.values.owner_name.slice(0, 16)}…` : 'Pattadar'}
+                          </span>
+                        </div>
+
+                        {/* Extent / Area Box */}
+                        <div className="absolute top-[40%] left-[8%] w-[38%] h-[8%] border border-amber-400/80 bg-amber-400/10 rounded flex items-start justify-end p-0.5 shadow-[0_0_8px_rgba(245,158,11,0.4)]">
+                          <span className="bg-amber-950/90 text-amber-300 font-mono text-[7px] font-bold px-1 rounded border border-amber-500/40">
+                            {result.values?.claimed_area_sqm ? `${result.values.claimed_area_sqm} sqm` : 'Area Extent'}
+                          </span>
+                        </div>
+
+                        {/* Official Seal Target */}
+                        <div className="absolute bottom-[8%] right-[8%] w-[32%] h-[15%] border-2 border-dashed border-rose-400/80 bg-rose-400/10 rounded-lg flex items-center justify-center shadow-[0_0_10px_rgba(244,63,94,0.3)]">
+                          <span className="bg-rose-950/90 text-rose-300 font-mono text-[8px] font-bold px-1 py-0.5 rounded border border-rose-500/40">
+                            🏛️ Official Revenue Seal
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Bottom Glass Footer Info */}
+                <div className="px-3 py-1 bg-slate-900/90 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                    <span>Optical Flatbed Calibration: <strong>Active</strong></span>
+                  </span>
+                  <span className="font-mono text-cyan-300 text-[9px]">
+                    {pageCount > 1 ? `Multi-Page Document · Page ${currentPage} of ${pageCount}` : 'Page 1 of 1 · High Resolution Platen'}
+                  </span>
+                </div>
+              </div>
             </div>
           )}
         </div>

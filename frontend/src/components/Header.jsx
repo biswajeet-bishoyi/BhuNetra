@@ -23,8 +23,10 @@ import {
   Sparkles,
   Check,
   Compass,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Globe
 } from 'lucide-react';
+import { useLang } from '../i18n';
 
 export default function Header({
   activeTab,
@@ -41,6 +43,7 @@ export default function Header({
   onLogout,
   onOpenOdishaModal
 }) {
+  const { lang, setLang, supportedLanguages } = useLang();
   // Active role determination: unauthenticated defaults to public Citizen view
   const activeRole = currentUser ? currentUser.role : (selectedRole || 'Citizen');
   const isOfficerOrCollector = activeRole === 'Revenue Officer' || activeRole === 'District Collector';
@@ -312,6 +315,22 @@ export default function Header({
             <Play className="w-3.5 h-3.5 fill-current" />
             <span className="hidden sm:inline">Demo Tour</span>
           </button>
+
+          {/* Language Switcher */}
+          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-800/80 border border-slate-700 text-xs text-slate-200">
+            <Globe className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <select
+              value={lang}
+              onChange={(e) => setLang(e.target.value)}
+              className="bg-transparent text-slate-200 text-xs font-semibold focus:outline-none cursor-pointer"
+            >
+              {supportedLanguages.map((l) => (
+                <option key={l.code} value={l.code} className="bg-slate-900 text-slate-200">
+                  {l.flag} {l.native} ({l.code.toUpperCase()})
+                </option>
+              ))}
+            </select>
+          </div>
 
           {/* User Profile & Auth State */}
           {currentUser ? (

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, GeoJSON, Tooltip, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
 import { ShieldAlert, AlertCircle, CheckCircle, Scale, ArrowRight, Activity, MapPin, Sliders, Lock, FileText, Volume2, BellRing, Smartphone, MessageSquare, Sparkles } from 'lucide-react';
 import VoiceAssistant from './VoiceAssistant';
 import LandHealthCard from './LandHealthCard';
@@ -28,6 +29,7 @@ function MapRecenter({ selectedParcel }) {
 }
 
 export default function MapViewer({ parcelsData, selectedParcel, setSelectedParcel, onSelectTab, selectedRole }) {
+  const [internalParcels, setInternalParcels] = useState(null);
   const [riskEnsemble, setRiskEnsemble] = useState(null);
   const [loadingRisk, setLoadingRisk] = useState(false);
   const [showHealthCard, setShowHealthCard] = useState(false);
@@ -35,6 +37,27 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
 
   // Center around Shamshabad Mandal, Rangareddy District, Telangana (17.258, 78.434)
   const mapCenter = [17.258, 78.434];
+
+  // Self-heal / auto-fetch parcels if not yet available from parent
+  useEffect(() => {
+    if (!parcelsData) {
+      fetch('/api/gis-check/')
+        .then(r => r.json())
+        .then(d => {
+          setInternalParcels(d);
+          if (!selectedParcel && d?.features?.length > 0) {
+            const p105 = d.features.find(f => f.properties?.parcel_id === 'P-105') || d.features[0];
+            setSelectedParcel(p105);
+          }
+        })
+        .catch(err => console.error("Failed to load parcels GIS data", err));
+    } else if (!selectedParcel && parcelsData?.features?.length > 0) {
+      const p105 = parcelsData.features.find(f => f.properties?.parcel_id === 'P-105') || parcelsData.features[0];
+      setSelectedParcel(p105);
+    }
+  }, [parcelsData]);
+
+  const activeParcels = parcelsData || internalParcels;
 
   useEffect(() => {
     if (selectedParcel?.properties?.parcel_id) {
@@ -149,10 +172,10 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
           <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shrink-0"></div>
           <div>
             <h3 className="text-xs font-bold text-slate-100 flex items-center gap-2">
-              <span>{selectedParcel?.properties?.village || 'Bhubaneswar'} ({selectedParcel?.properties?.district || 'Khordha'}) Cadastral Map</span>
-              {selectedParcel?.properties?.khasra_no && (
+              <span>{selectedParcel?.properties?.village || 'Shamshabad'} ({selectedParcel?.properties?.district || 'Rangareddy'}) Cadastral Map</span>
+              {selectedParcel?.properties?.survey_no && (
                 <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono text-[10px] border border-amber-500/40">
-                  Khasra {selectedParcel.properties.khasra_no}
+                  Sy. {selectedParcel.properties.survey_no}
                 </span>
               )}
             </h3>
@@ -168,7 +191,7 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
             onClick={() => setMapLayer('satellite')}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
               mapLayer === 'satellite'
-                ? 'bg-amber-500 text-slate-950 shadow-md'
+                ? 'bg-amber-500 text-slate-950 shadow-md font-bold'
                 : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
             }`}
           >
@@ -178,7 +201,7 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
             onClick={() => setMapLayer('streets')}
             className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
               mapLayer === 'streets'
-                ? 'bg-amber-500 text-slate-950 shadow-md'
+                ? 'bg-amber-500 text-slate-950 shadow-md font-bold'
                 : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
             }`}
           >
@@ -206,7 +229,7 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
           </div>
         </div>
 
-        {parcelsData && parcelsData.features ? (
+        {activeParcels && activeParcels.features ? (
           <MapContainer
             center={mapCenter}
             zoom={16}
@@ -228,8 +251,8 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
               />
             )}
             <GeoJSON
-              key={`${JSON.stringify(parcelsData)}-${mapLayer}-${selectedParcel?.properties?.parcel_id}`}
-              data={parcelsData}
+              key={`${JSON.stringify(activeParcels)}-${mapLayer}-${selectedParcel?.properties?.parcel_id}`}
+              data={activeParcels}
               style={getParcelStyle}
               onEachFeature={onEachFeature}
             />

@@ -6,23 +6,23 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "vite preview"
   },
   "dependencies": {
-    "ethers": "^6.13.0",
-    "leaflet": "^1.9.4",
-    "lucide-react": "^0.380.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-leaflet": "^4.2.1"
-  },
-  "devDependencies": {
     "@tailwindcss/vite": "^4.0.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.19",
+    "bhunetra": "file:..",
+    "ethers": "^6.13.0",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.380.0",
     "postcss": "^8.4.38",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-leaflet": "^4.2.1",
     "tailwindcss": "^4.0.0",
     "vite": "^5.2.11"
   }

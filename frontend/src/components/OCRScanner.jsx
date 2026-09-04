@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import DocumentReviewPanel from './DocumentReviewPanel';
 import UPBhulekhHistoryModal from './UPBhulekhHistoryModal';
+import OdishaBhulekhModal from './OdishaBhulekhModal';
 
 /**
  * Engine 1 — Document Digitization Workbench.
@@ -48,10 +49,16 @@ const CHECK_LABELS = {
 };
 
 const SAMPLE_SCANS = [
-  { id: 'P-OD-102', label: '🌟 Odisha (Ganjam Chhatrapur RoR)', hint: 'Bhulekh Odisha · Khata No. 102, Sudrusti Sethi, Chhatrapur, Ganjam', file: 'odisha_ror_102.png', filename: 'Bhulekh_Odisha_Ganjam_Khata102.png' },
-  { id: 'P-4661', label: '📄 Delhi (Sangam Vihar GPA)', hint: 'General Power of Attorney · Khasra 46/61, 32 Sq Yds', file: 'scan_P-105.png', filename: 'General_Power_of_Attorney_46-61.png' },
-  { id: 'P-105', label: '🏛️ Telangana (Shamshabad Dharani)', hint: 'Printed Dharani Sale Deed · Shamshabad', file: 'scan_P-105.png', filename: 'scan_P-105.png' },
-  { id: 'P-106', label: '✍️ Handwritten RoR (P-106)', hint: 'Handwritten RoR · Revenue Officer Review', file: 'scan_P-106.png', filename: 'scan_P-106.png' },
+  { id: 'P-OD-102', label: '🌟 Odisha (Ganjam Chhatrapur RoR · ଓଡ଼ିଆ)', hint: 'Bhulekh Odisha · Khata No. 102, Sudrusti Sethi, Chhatrapur, Ganjam', file: 'odisha_ror_102.png', filename: 'Bhulekh_Odisha_Ganjam_Khata102.png', lang: 'ori' },
+  { id: 'P-105', label: '🏛️ Telangana (Shamshabad Dharani · తెలుగు)', hint: 'Printed Dharani Sale Deed · Shamshabad', file: 'scan_P-105.png', filename: 'scan_P-105.png', lang: 'tel' },
+  { id: 'P-UP-45', label: '📜 Uttar Pradesh (Lucknow Bhulekh · हिन्दी)', hint: 'UP Bhulekh Khatauni · Khasra 45/1, Mohanlalganj, Lucknow', file: 'up_bhulekh_45.png', filename: 'UP_Bhulekh_Khatauni_45.png', lang: 'hin' },
+  { id: 'P-TN-42', label: '🌾 Tamil Nadu (Sriperumbudur Patta · தமிழ்)', hint: 'TN e-Services Patta Chitta · Patta 1042, Survey 42/1A, Sriperumbudur', file: 'tamilnadu_patta_42.png', filename: 'TN_Patta_Chitta_1042.png', lang: 'tam' },
+  { id: 'P-KA-45', label: '🏡 Karnataka (Devanahalli Bhoomi · ಕನ್ನಡ)', hint: 'Karnataka Bhoomi RTC · Survey 45/1, Devanahalli, Bengaluru Rural', file: 'karnataka_bhoomi_45.png', filename: 'KA_Bhoomi_RTC_45.png', lang: 'kan' },
+  { id: 'P-MH-123', label: '🚜 Maharashtra (Pune Mahabhulekh · मराठी)', hint: 'Mahabhulekh 7/12 · Survey 123, Khata 412, Wagholi, Haveli, Pune', file: 'maharashtra_712_123.png', filename: 'MH_712_Wagholi_123.png', lang: 'mar' },
+  { id: 'P-WB-204', label: '🌾 West Bengal (Banglarbhumi · বাংলা)', hint: 'Banglarbhumi RoR · Khatian 204, Dag 89/1, Barasat', file: 'bengali_banglarbhumi_204.png', filename: 'WB_Banglarbhumi_204.png', lang: 'ben' },
+  { id: 'P-GJ-58', label: '🏭 Gujarat (Sanand AnyRoR · ગુજરાતી)', hint: 'AnyRoR VF-7/12 · Survey 58/2, Khata 92, Sanand, Ahmedabad', file: 'gujarat_anyror_58.png', filename: 'GJ_AnyRoR_58.png', lang: 'guj' },
+  { id: 'P-4661', label: '📄 Delhi (Sangam Vihar GPA · English)', hint: 'General Power of Attorney · Khasra 46/61, 32 Sq Yds', file: 'scan_P-105.png', filename: 'General_Power_of_Attorney_46-61.png', lang: 'eng' },
+  { id: 'P-106', label: '✍️ Handwritten RoR (P-106)', hint: 'Handwritten RoR · Revenue Officer Review', file: 'scan_P-106.png', filename: 'scan_P-106.png', lang: 'auto' },
 ];
 
 function confidenceTone(conf, needsReview) {
@@ -76,8 +83,9 @@ const TONE_TEXT = {
 
 const INDIAN_LANGUAGES = [
   { code: 'auto', label: '🌐 Auto-Detect Indic Language' },
-  { code: 'hin', label: '🇮🇳 Hindi (हिन्दी)' },
+  { code: 'ori', label: '🇮🇳 Odia (ଓଡ଼ିଆ)' },
   { code: 'tel', label: '🇮🇳 Telugu (తెలుగు)' },
+  { code: 'hin', label: '🇮🇳 Hindi (हिन्दी)' },
   { code: 'tam', label: '🇮🇳 Tamil (தமிழ்)' },
   { code: 'kan', label: '🇮🇳 Kannada (ಕನ್ನಡ)' },
   { code: 'mar', label: '🇮🇳 Marathi (मराठी)' },
@@ -108,6 +116,12 @@ export default function OCRScanner({ onSelectParcel }) {
   const [upbhulekhData, setUpbhulekhData] = useState(null);
   const [upbhulekhModalOpen, setUpbhulekhModalOpen] = useState(false);
   const [upbhulekhError, setUpbhulekhError] = useState(null);
+
+  // Agno Framework Odisha Bhulekh Land History Agent States
+  const [odishaLoading, setOdishaLoading] = useState(false);
+  const [odishaData, setOdishaData] = useState(null);
+  const [odishaModalOpen, setOdishaModalOpen] = useState(false);
+  const [odishaError, setOdishaError] = useState(null);
 
   const handleFetchUPBhulekhHistory = async () => {
     if (!result || !result.values) return;
@@ -271,10 +285,13 @@ export default function OCRScanner({ onSelectParcel }) {
 
   const handleSampleClick = async (sample) => {
     setPreviewUrl(`/static-data/synthetic/registry_scans/${sample.file}`);
+    if (sample.lang) {
+      setSelectedLanguage(sample.lang);
+    }
     try {
       const res = await fetch(`/static-data/synthetic/registry_scans/${sample.file}`);
       const blob = await res.blob();
-      await runExtraction(blob, sample.filename || sample.file);
+      await runExtraction(blob, sample.filename || sample.file, sample.lang);
     } catch (err) {
       setError({ status: 0, message: `Could not load the sample scan. ${err.message}` });
     }
@@ -704,23 +721,82 @@ export default function OCRScanner({ onSelectParcel }) {
 
           {result && (
             <div className="pt-4 border-t border-slate-800 space-y-2.5">
-              <button
-                onClick={handleFetchUPBhulekhHistory}
-                disabled={upbhulekhLoading}
-                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white text-xs font-black transition shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer border border-cyan-400/30"
-              >
-                {upbhulekhLoading ? (
-                  <>
-                    <span className="animate-spin text-sm">⏳</span>
-                    <span>Querying UP Bhulekh with Agno AI Agent...</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-base">🏛️</span>
-                    <span>Fetch Land History from UP Bhulekh (Launch Agno AI Agent)</span>
-                  </>
-                )}
-              </button>
+              {/* Single State-Adaptive Cross-Verification Button */}
+              {(() => {
+                const stateStr = (result.values?.state || '').toLowerCase();
+                const distStr = (result.values?.district || '').toLowerCase();
+                const isOdisha = stateStr.includes('odisha') || stateStr.includes('orissa') || distStr.includes('ganjam') || distStr.includes('khordha');
+                const isUP = stateStr.includes('uttar') || distStr.includes('lucknow');
+                const isTelangana = stateStr.includes('telangana') || distStr.includes('rangareddy');
+                const isTN = stateStr.includes('tamil') || distStr.includes('kanchipuram') || distStr.includes('chennai');
+                const isKA = stateStr.includes('karnataka') || distStr.includes('bengaluru');
+                const isMH = stateStr.includes('maharashtra') || distStr.includes('pune');
+                const isWB = stateStr.includes('bengal') || distStr.includes('parganas');
+                const isGJ = stateStr.includes('gujarat') || distStr.includes('ahmedabad');
+
+                if (isOdisha) {
+                  return (
+                    <button
+                      onClick={handleFetchOdishaBhulekh}
+                      disabled={odishaLoading}
+                      className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500 text-white text-xs font-black transition shadow-lg shadow-teal-600/30 flex items-center justify-center gap-2 cursor-pointer border border-teal-400/30"
+                    >
+                      {odishaLoading ? (
+                        <>
+                          <span className="animate-spin text-sm">⏳</span>
+                          <span>Connecting to Odisha Bhulekh with Agno AI Agent...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-base">🌟</span>
+                          <span>Verify Land Record with Odisha Bhulekh (Launch Agno AI Agent)</span>
+                        </>
+                      )}
+                    </button>
+                  );
+                }
+
+                if (isUP) {
+                  return (
+                    <button
+                      onClick={handleFetchUPBhulekhHistory}
+                      disabled={upbhulekhLoading}
+                      className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white text-xs font-black transition shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer border border-cyan-400/30"
+                    >
+                      {upbhulekhLoading ? (
+                        <>
+                          <span className="animate-spin text-sm">⏳</span>
+                          <span>Querying UP Bhulekh with Agno AI Agent...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-base">🏛️</span>
+                          <span>Fetch Land History from UP Bhulekh (Launch Agno AI Agent)</span>
+                        </>
+                      )}
+                    </button>
+                  );
+                }
+
+                let portalLabel = 'State Land Records Portal (DILRMP)';
+                let portalIcon = '🏛️';
+                if (isTelangana) { portalLabel = 'Telangana Dharani Land Portal'; portalIcon = '🏛️'; }
+                else if (isTN) { portalLabel = 'Tamil Nadu AnyRoR / e-Services (Patta Chitta)'; portalIcon = '🌾'; }
+                else if (isKA) { portalLabel = 'Karnataka Bhoomi RTC Portal'; portalIcon = '🏡'; }
+                else if (isMH) { portalLabel = 'Maharashtra Mahabhulekh (7/12 Extract)'; portalIcon = '🚜'; }
+                else if (isWB) { portalLabel = 'West Bengal Banglarbhumi RoR Portal'; portalIcon = '🌾'; }
+                else if (isGJ) { portalLabel = 'Gujarat AnyRoR VF-7/12 Portal'; portalIcon = '🏭'; }
+
+                return (
+                  <button
+                    onClick={() => onSelectParcel(result.parcel_id_hint || 'P-105', result.uploaded_feature)}
+                    className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white text-xs font-black transition shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer border border-cyan-400/30"
+                  >
+                    <span className="text-base">{portalIcon}</span>
+                    <span>Cross-Verify Record on {portalLabel}</span>
+                  </button>
+                );
+              })()}
 
               <button
                 onClick={() => onSelectParcel(result.parcel_id_hint || 'P-4661', result.uploaded_feature)}
@@ -748,6 +824,17 @@ export default function OCRScanner({ onSelectParcel }) {
         onLocateOnMap={() => {
           if (result) {
             onSelectParcel(result.parcel_id_hint || 'P-UP-45', result.uploaded_feature);
+          }
+        }}
+      />
+
+      <OdishaBhulekhModal
+        isOpen={odishaModalOpen}
+        onClose={() => setOdishaModalOpen(false)}
+        initialData={odishaData}
+        onLocateOnMap={() => {
+          if (result) {
+            onSelectParcel(result.parcel_id_hint || 'P-OD-102', result.uploaded_feature);
           }
         }}
       />

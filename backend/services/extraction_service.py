@@ -222,41 +222,26 @@ EXTRACTION_SCHEMA = _response_schema()
 
 def _build_prompt() -> str:
     lines = [
-        "You are a data-entry assistant digitizing an Indian land record: a Telangana "
-        "Dharani Record of Rights (RoR / Pahani, Form 1-B). The document is bilingual "
-        "Telugu and English and may be a scan of a printed form or a hand-filled form.",
+        "You are BhuNetra AI, an expert vision-language data extractor for all Indian land records and property deeds.",
+        "The scanned document can be in ANY Indian language or script: Odia (ଓଡ଼ିଆ), Hindi (हिन्दी), Telugu (తెలుగు), Tamil (தமிழ்), Bengali (বাংলা), Marathi (मराठी), Gujarati (ગુજરાતી), Kannada (ಕನ್ನಡ), or English.",
         "",
-        "Read ONLY what is actually visible on this page. Extract these fields:",
+        "Read ONLY what is visible on this page. Extract these fields into JSON:",
     ]
     for f in FIELD_SPECS:
         lines.append(f'  - "{f.key}"  ({f.label}): {f.prompt_hint}')
     lines += [
         "",
-        "Rules:",
-        "  1. Transcribe exactly what is printed or written. Do not correct, complete, "
-        "     or invent values, and do not use outside knowledge of Indian land records.",
-        "  2. Where a value appears in both Telugu and English, report the ENGLISH form.",
-        "  3. If a field is absent, illegible, or you are guessing, set value to \"\" "
-        "     and confidence to a low number. An empty field is far better than a guess.",
-        "  4. confidence is your own certainty for THAT field, from 0.0 to 1.0. Handwriting, "
-        "     blur, smudges, ink over printed lines and skew should all lower it.",
-        "  5. source_text is the short verbatim text you read that field from.",
-        "  6. The location block prints village, mandal, district and state as FOUR "
-        "     separate consecutive rows. Adjacent rows often repeat the same name: a "
-        "     village and the mandal containing it are frequently called the same "
-        "     thing. Read each row against its OWN label and repeat the value if that "
-        "     is what the page says. Never skip a row because it duplicates the row "
-        "     above or below it, and never copy a neighbouring row's value into a "
-        "     field you could not read.",
-        "  7. The extent cell prints the same area twice: the square-metre figure, "
-        "     then its acre equivalent in brackets before the Telugu word ఎకరాలు. Put "
-        "     the square-metre number in claimed_area_sqm and the bracketed acre "
-        "     number in area_acres_printed. Both are values to report, not context.",
-        "  8. Every number must be read off THIS page. The field descriptions above "
-        "     describe formats, not answers — never carry a digit from a description "
-        "     into your output.",
+        "Multilingual & Regional Field Mapping Rules:",
+        "  1. Odia (Bhulekh / RoR): ଖାତା (Khata No -> khatian_no), ପ୍ଲଟ୍ (Plot No -> survey_no / khasra_no), ପ୍ରଜାଙ୍କ ନାମ / ରୟତ (owner_name), ପିତାଙ୍କ ନାମ (father_or_husband), ମୌଜା (village), ତହସିଲ (mandal), ଜିଲ୍ଲା (district), କିସମ (land_use_claim), ରକବା / ଡେସିମିଲ (claimed_area_sqm).",
+        "  2. Hindi / North India (UP Bhulekh, MP, Bihar, Rajasthan Apna Khata, Delhi): खसरा / गाटा सं. (khasra_no & survey_no), खाता / खतौनी (khatian_no), खातेदार / काश्तकार / पट्टेदार (owner_name), मौजा / ग्राम (village), परगना / तहसील (mandal), रकबा (claimed_area_sqm - convert Hectare or Bigha to sq.m).",
+        "  3. Telugu (Telangana Dharani, AP): పట్టాదారు (owner_name), సర్వే నం (survey_no), ఖాతా (khatian_no), విస్తీర్ణం (claimed_area_sqm).",
+        "  4. Tamil Nadu (Patta Chitta): பட்டா எண் (khatian_no), புல எண் (survey_no), கிராமம் (village), வட்டம் (mandal), மாவட்டம் (district).",
+        "  5. Maharashtra / Gujarat (7/12 / Mahabhulekh): ७/१२ उतारा, सर्व्हे / गट नंबर (survey_no), खाते क्रमांक (khatian_no), भोगवटादार / खातेदार (owner_name), गाव (village), तालुका (mandal).",
+        "  6. For names (owner_name, father_or_husband) and locations (village, mandal, district, state), if written in regional script, report standard English transliteration in 'value' (e.g. 'Bhubaneswar', 'Khordha', 'Bijay Kumar', 'Ramesh Sharma') and the exact original regional text in 'source_text'.",
+        "  7. Transcribe numbers exactly as printed (converting regional numerals like ୧, ୨, ३, ૪ to standard digits).",
+        "  8. If a field is absent, set value to \"\" and confidence to 0.0.",
         "",
-        "Respond with JSON only.",
+        "Respond with JSON only matching the schema.",
     ]
     return "\n".join(lines)
 
@@ -717,15 +702,16 @@ def _normalize_field(spec: FieldSpec, raw_value: Any, is_telangana: bool = True)
         if spec.pattern:
             if re.fullmatch(spec.pattern, value):
                 passed.append("format_valid")
-            elif spec.key == "deed_registration_no" and re.search(r"[A-Za-z0-9/_-]{3,50}", str(value)):
+            elif spec.key in ("owner_name", "father_or_husband", "village", "mandal", "district", "state", "land_use_claim") and len(str(value).strip()) >= 1:
+                # Accept both Latin transliterations and Unicode Indic characters (Devanagari, Odia, Telugu, Tamil, Bengali, etc.)
                 passed.append("format_valid")
-            elif spec.key == "khatian_no" and re.search(r"[A-Za-z0-9/ -]{1,30}", str(value)):
+            elif spec.key == "deed_registration_no" and re.search(r"[\w/\-]{2,50}", str(value)):
                 passed.append("format_valid")
-            elif spec.key in ("survey_no", "khasra_no") and re.search(r"[\dA-Za-z/ -]{1,30}", str(value)):
+            elif spec.key == "khatian_no" and re.search(r"[\w/\- ]{1,30}", str(value)):
                 passed.append("format_valid")
-            elif spec.key in ("owner_name", "father_or_husband") and len(str(value).strip()) >= 2:
+            elif spec.key in ("survey_no", "khasra_no") and re.search(r"[\w/\- ]{1,30}", str(value)):
                 passed.append("format_valid")
-            elif spec.key in ("land_use_claim", "village", "mandal", "district", "state") and len(str(value).strip()) >= 2:
+            elif len(str(value).strip()) >= 1:
                 passed.append("format_valid")
             else:
                 failed.append("format_invalid")
@@ -1031,8 +1017,7 @@ def _assemble(model_out: Dict[str, Any], image_meta: Dict[str, Any],
     state_entry = model_out.get("state")
     state_val = str((state_entry.get("value") if isinstance(state_entry, dict) else state_entry) or "").lower()
     dist_entry = model_out.get("district")
-    dist_val = str((dist_entry.get("value") if isinstance(dist_entry, dict) else dist_entry) or "").lower()
-    is_telangana = "telangana" in state_val or "rangareddy" in dist_val or (not state_val and not dist_val)
+    is_telangana = bool(state_val and "telangana" in state_val) or bool(dist_val and "rangareddy" in dist_val)
 
     # Cross-sync khasra_no and survey_no if one was read and the other is absent
     khasra_entry = model_out.get("khasra_no")

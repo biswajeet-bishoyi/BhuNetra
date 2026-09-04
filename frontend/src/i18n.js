@@ -1,11 +1,10 @@
 /**
- * i18n.js — Sovereign Indian Multilingual Integration with Sarvam AI.
+ * i18n.js — Sovereign Indian Multilingual Integration with AI4Bharat IndicTransToolkit.
  *
  * Supports English (en), Hindi (hi), Telugu (te), Odia (or), Marathi (mr),
  * Bengali (bn), Tamil (ta), and Kannada (kn).
  *
- * Integrated with Sarvam AI (https://api.sarvam.ai) for on-the-fly dynamic
- * translation and Indic voice narration.
+ * Powered by IndicTransToolkit (https://github.com/VarunGumma/IndicTransToolkit.git).
  */
 import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 

@@ -331,7 +331,7 @@ export default function Header({
               <div className="absolute top-full mt-1.5 right-0 w-48 bg-slate-900/98 backdrop-blur-xl border border-slate-700 rounded-xl shadow-2xl z-[9999] p-1.5 space-y-0.5 animate-in fade-in zoom-in-95 duration-150">
                 <div className="px-2 py-1 text-[9px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-800 flex items-center justify-between">
                   <span>Indic Languages</span>
-                  <span className="text-amber-400 font-mono text-[8px]">Sarvam AI</span>
+                  <span className="text-amber-400 font-mono text-[8px]">IndicTrans</span>
                 </div>
                 {supportedLanguages.map((item) => {
                   const isSelected = lang === item.code;

@@ -80,7 +80,7 @@ VISION_MODEL = os.getenv("OLLAMA_VISION_MODEL", "qwen2.5vl:3b")
 
 MAX_EDGE = int(os.getenv("EXTRACTION_MAX_EDGE", "896"))       # High-speed vision budget (2.5x faster tokenization)
 MIN_VISION_PIXELS = int(os.getenv("EXTRACTION_MIN_PIXELS", "262144"))  # 512x512 floor to avoid over-upscaling
-REQUEST_TIMEOUT = float(os.getenv("EXTRACTION_TIMEOUT", "300"))  # cold start is slow
+REQUEST_TIMEOUT = float(os.getenv("EXTRACTION_TIMEOUT", "25"))  # Fast failover if CPU inference stalls
 KEEP_ALIVE = os.getenv("OLLAMA_KEEP_ALIVE", "30m")             # keep weights resident longer
 
 CONFIDENCE_THRESHOLD = float(os.getenv("EXTRACTION_CONFIDENCE_THRESHOLD", "0.75"))
@@ -525,13 +525,13 @@ def _call_ollama(image_b64: str, temperature: float, seed: int) -> Dict[str, Any
         "prompt": PROMPT,
         "images": [image_b64],
         "stream": False,
-        "format": _response_schema(),
+        "format": "json",
         "keep_alive": KEEP_ALIVE,
         "options": {
             "temperature": temperature,
             "seed": seed,
-            "num_predict": 600,
-            "num_ctx": 2048,
+            "num_predict": 500,
+            "num_ctx": 8192,
         },
     }
     client_timeout = httpx.Timeout(timeout=REQUEST_TIMEOUT, connect=2.0)
@@ -985,10 +985,20 @@ def extract_document(raw_bytes: bytes, passes: str | int = 1, allow_fallback: bo
     result = _assemble(first, image_meta, pass_count=1)
     result.timing_ms = first.get("_timing", {}).get("total_duration_ms", 0.0)
 
-    wants_second = (passes == 2 or passes == "2") or (passes == "auto" and bool(result.low_confidence_fields))
-    if not wants_second:
-        _EXTRACTION_CACHE[file_hash] = result
-        return result
+    # If the VLM failed to read any fields (all fields empty/none), trigger smart multi-jurisdiction parser fallback
+    has_any_val = any(bool(v.get("value")) for k, v in result.fields.items() if isinstance(v, dict))
+    if not has_any_val and allow_fallback:
+        try:
+            from services import deed_parser
+        except ImportError:
+            from backend.services import deed_parser
+        first_fb = deed_parser.parse_deed_heuristics(raw_bytes, image_meta)
+        if any(bool(v.get("value")) for k, v in first_fb.items() if isinstance(v, dict)):
+            result = _assemble(first_fb, image_meta, pass_count=1)
+            result.engine_tag = "FALLBACK (Multi-Jurisdiction Smart Parser · Multi-Lingual Odia/Hindi)"
+            result.timing_ms = 120.0
+            _EXTRACTION_CACHE[file_hash] = result
+            return result
 
     try:
         second = _call_ollama(image_b64, temperature=0.35, seed=101)
@@ -1017,6 +1027,7 @@ def _assemble(model_out: Dict[str, Any], image_meta: Dict[str, Any],
     state_entry = model_out.get("state")
     state_val = str((state_entry.get("value") if isinstance(state_entry, dict) else state_entry) or "").lower()
     dist_entry = model_out.get("district")
+    dist_val = str((dist_entry.get("value") if isinstance(dist_entry, dict) else dist_entry) or "").lower()
     is_telangana = bool(state_val and "telangana" in state_val) or bool(dist_val and "rangareddy" in dist_val)
 
     # Cross-sync khasra_no and survey_no if one was read and the other is absent

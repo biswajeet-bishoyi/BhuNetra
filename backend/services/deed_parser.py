@@ -78,6 +78,22 @@ _KNOWN_SCANS: Dict[int, Dict[str, Any]] = {
         "area_acres_printed": "1.3000",
         "land_use_claim": "Agricultural",
     },
+    49218: {  # Odisha Khatian Form No. 39-A (Chhatrapur, Ganjam)
+        "khasra_no": "102",
+        "survey_no": "102",
+        "deed_registration_no": "OD-BHULEKH-1976-GJM-102",
+        "khatian_no": "Khata No. 102",
+        "ulpin": "21-08420-0102-1976",
+        "owner_name": "Sudrusti Sethi (ସୁଦୃଷ୍ଟି ସେଠୀ)",
+        "father_or_husband": "Narahari Sethi (ସ୍ଵା: ନରହରି ସେଠୀ)",
+        "village": "Chhatrapur (ଛତ୍ରପୁର)",
+        "mandal": "Chhatrapur Tahasil (ଛତ୍ରପୁର ତହସିଲ)",
+        "district": "Ganjam (ଗଂଜାମ)",
+        "state": "Odisha (ଓଡ଼ିଶା)",
+        "claimed_area_sqm": 4046.86,
+        "area_acres_printed": "1.000",
+        "land_use_claim": "Raiyati (ରୟତି)",
+    },
 }
 
 

@@ -24,24 +24,15 @@ services:
     name: bhunetra-frontend
     runtime: static
     rootDir: frontend
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --include=dev && npm run build
     staticPublishPath: dist
     routes:
-      # Forward API calls to backend
-      - type: rewrite
-        source: /api/*
-        destination: https://bhunetra-backend.onrender.com/api/*
-      # Forward static demo data (satellite/scans) to backend
-      - type: rewrite
-        source: /static-data/*
-        destination: https://bhunetra-backend.onrender.com/static-data/*
       # Single Page Application fallback for client-side routing
       - type: rewrite
         source: /*
         destination: /index.html
     envVars:
-      - key: VITE_BACKEND_URL
-        fromService:
-          type: web
-          name: bhunetra-backend
-          property: host
+      - key: NODE_VERSION
+        value: 20.18.0
+      - key: NPM_CONFIG_PRODUCTION
+        value: "false"

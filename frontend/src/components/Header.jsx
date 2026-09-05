@@ -24,7 +24,9 @@ import {
   Check,
   Compass,
   FileSpreadsheet,
-  Globe
+  Globe,
+  User,
+  QrCode
 } from 'lucide-react';
 import { useLang } from '../i18n';
 
@@ -41,7 +43,10 @@ export default function Header({
   currentUser,
   onOpenLoginModal,
   onLogout,
-  onOpenOdishaModal
+  onOpenOdishaModal,
+  onOpenWhatsApp,
+  onOpenEKYC,
+  onOpenForensics
 }) {
   const { lang, setLang, supportedLanguages } = useLang();
   // Active role determination: unauthenticated defaults to public Citizen view
@@ -79,6 +84,8 @@ export default function Header({
       : []),
     { id: 'map', label: 'GIS Map', icon: Map },
     { id: 'ocr', label: 'Registry OCR', icon: FileText },
+    { id: 'citizen', label: 'Citizen Portal', icon: User },
+    { id: 'buyer-verify', label: 'Buyer QR Verify', icon: QrCode },
     ...(isOfficerOrCollector
       ? [{ id: 'review', label: 'Officer Queue', icon: CheckCircle, badge: 'P0' }]
       : []),
@@ -115,6 +122,18 @@ export default function Header({
 
   // Group 2: Revenue Operations & Records (for Officers/Collectors)
   const operationsTabs = [
+    {
+      id: 'triple-workspace',
+      label: 'Triple Evidence Workspace',
+      description: '3-way deed vs RoR vs survey comparison & 65B evidence PDF',
+      icon: Scale
+    },
+    {
+      id: 'settlement',
+      label: 'Settlement Disputes',
+      description: '6-phase boundary demarcation & settlement SLA tracker',
+      icon: Compass
+    },
     {
       id: 'revenue',
       label: 'Revenue Court',
@@ -315,6 +334,42 @@ export default function Header({
             <Play className="w-3.5 h-3.5 fill-current" />
             <span className="hidden sm:inline">Demo Tour</span>
           </button>
+
+          {/* WhatsApp Assistant Launch Button */}
+          {onOpenWhatsApp && (
+            <button
+              onClick={onOpenWhatsApp}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition cursor-pointer shadow-sm"
+              title="Open WhatsApp Multilingual AI Land Assistant (Telugu, Hindi, Odia, English)"
+            >
+              <span className="text-xs">💬</span>
+              <span className="hidden md:inline">WhatsApp AI</span>
+            </button>
+          )}
+
+          {/* Aadhaar e-KYC Quick Launch */}
+          {onOpenEKYC && (
+            <button
+              onClick={onOpenEKYC}
+              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-semibold transition cursor-pointer"
+              title="Aadhaar e-KYC & DPDP Consent Verification"
+            >
+              <span>🪪</span>
+              <span>e-KYC</span>
+            </button>
+          )}
+
+          {/* Document Forensics Quick Launch */}
+          {onOpenForensics && (
+            <button
+              onClick={onOpenForensics}
+              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-semibold transition cursor-pointer"
+              title="Forensic Document Tamper & ELA Inspector"
+            >
+              <span>🔍</span>
+              <span>Forensics</span>
+            </button>
+          )}
 
           {/* Language Switcher */}
           <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-800/80 border border-slate-700 text-xs text-slate-200">

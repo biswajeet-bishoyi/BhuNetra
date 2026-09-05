@@ -552,8 +552,12 @@ def extract_document(
     try:
         passes_arg = int(passes) if passes in {"1", "2"} else "auto"
         result = ex.extract_document(raw_bytes, passes=passes_arg, allow_fallback=True, language=language or "auto")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     except ex.ExtractionUnavailable as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Extraction failed: {str(exc)}") from exc
 
     # Persist the extraction result
     result_dict = result.to_dict()

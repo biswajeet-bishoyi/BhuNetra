@@ -72,3 +72,45 @@ def verify_blockchain_hash(parcel_id: str, db: Session = Depends(get_db)):
         "timestamp": log.timestamp.strftime("%Y-%m-%d %H:%M:%S"),
         "legal_disclaimer": "Digital integrity hash verified under IT Act 2000 Sec 65B; statutory ownership governed by Registration Act 1908 deed."
     }
+
+
+class MerkleBundleRequest(BaseModel):
+    documents: list[dict] = []
+
+
+class PolygonCommitmentRequest(BaseModel):
+    parcel_id: str
+    coordinates: list = []
+
+
+class AutoReleaseRequest(BaseModel):
+    mutation_id: str
+    risk_score: float = 14.5
+    days_in_cooling_period: int = 92
+
+
+@router.post("/merkle-bundle")
+def create_merkle_bundle(req: MerkleBundleRequest):
+    """Construct cryptographic Merkle Tree for multi-document bundles."""
+    from services import blockchain_advanced_service
+    res = blockchain_advanced_service.build_merkle_tree_bundle(req.documents)
+    return {"success": True, "data": res}
+
+
+@router.post("/polygon-commitment")
+def create_polygon_commitment(req: PolygonCommitmentRequest):
+    """Generate privacy-preserving spatial polygon commitment."""
+    from services import blockchain_advanced_service
+    res = blockchain_advanced_service.generate_polygon_spatial_commitment(req.parcel_id, req.coordinates)
+    return {"success": True, "data": res}
+
+
+@router.post("/auto-release-evaluate")
+def evaluate_auto_release(req: AutoReleaseRequest):
+    """Evaluate smart contract conditional auto-release for low-risk mutations."""
+    from services import blockchain_advanced_service
+    res = blockchain_advanced_service.evaluate_smart_contract_auto_release(
+        req.mutation_id, req.risk_score, req.days_in_cooling_period
+    )
+    return {"success": True, "data": res}
+

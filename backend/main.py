@@ -39,7 +39,12 @@ from routers import (
     alerts,
     parcels,
     agents,
-    translation
+    translation,
+    forensics,
+    ekyc,
+    survey,
+    ml_vision,
+    title_chain
 )
 
 # Initialize DB tables
@@ -70,11 +75,16 @@ app.include_router(review_queue.router, prefix="/api")
 app.include_router(revenue_court.router, prefix="/api")
 app.include_router(blockchain.router, prefix="/api")
 app.include_router(documents.router, prefix="/api")
+app.include_router(forensics.router, prefix="/api")
+app.include_router(ekyc.router, prefix="/api")
+app.include_router(survey.router, prefix="/api")
+app.include_router(ml_vision.router, prefix="/api")
 app.include_router(certificate.router, prefix="/api")
 app.include_router(auth.router, prefix="/api")
 app.include_router(analytics.router, prefix="/api")
 app.include_router(alerts.router, prefix="/api")
 app.include_router(parcels.router, prefix="/api")
+app.include_router(title_chain.router, prefix="/api")
 app.include_router(alerts.router)
 
 # Also include routes without /api prefix for backward compatibility
@@ -87,6 +97,10 @@ app.include_router(review_queue.router)
 app.include_router(revenue_court.router)
 app.include_router(blockchain.router)
 app.include_router(documents.router)
+app.include_router(forensics.router)
+app.include_router(ekyc.router)
+app.include_router(survey.router)
+app.include_router(ml_vision.router)
 app.include_router(certificate.router)
 app.include_router(auth.router)
 app.include_router(analytics.router)
@@ -96,6 +110,7 @@ app.include_router(parcels.router)
 app.include_router(agents.router)
 app.include_router(translation.router, prefix="/api")
 app.include_router(translation.router)
+app.include_router(title_chain.router)
 
 # Serve synthetic scan files and satellite images
 data_dir = os.path.join(os.path.dirname(__file__), "..", "data")

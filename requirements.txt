@@ -32,9 +32,10 @@ passlib==1.7.4
 bcrypt==5.0.0
 python-jose==3.5.0
 
-# PDF certificate export
+# PDF certificate export and scan ingestion
 reportlab
 qrcode[pil]
+pypdfium2
 
 # ---------------------------------------------------------------------------
 # NOT pip-installable — required for the REAL extraction engine:

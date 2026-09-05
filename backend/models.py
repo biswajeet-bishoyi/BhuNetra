@@ -203,3 +203,112 @@ class OwnershipTransfer(Base):
     deed_number = Column(String)
     price_inr = Column(Float)
     flag_rapid_resale = Column(Boolean, default=False)
+
+
+class TitleChainDocument(Base):
+    """
+    Stores individual deeds / mutation records in a property's title chain
+    (e.g., Grandfather Sale Deed -> Father Mutation -> Current Registration).
+    """
+    __tablename__ = "title_chain_documents"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    parcel_id = Column(String, index=True)
+    parent_document_id = Column(Integer, nullable=True) # Links to predecessor in lineage
+    owner_name = Column(String, nullable=False)
+    father_name = Column(String, nullable=True)
+    document_type = Column(String, default="Sale Deed") # Sale Deed, Mutation Order, Patta, Gift Deed, Partition
+    deed_date = Column(String, nullable=True) # YYYY-MM-DD
+    deed_year = Column(Integer, nullable=True)
+    registration_no = Column(String, nullable=True)
+    survey_no = Column(String, nullable=True)
+    khata_no = Column(String, nullable=True)
+    village = Column(String, nullable=True)
+    district = Column(String, nullable=True)
+    state = Column(String, nullable=True)
+    area_sqm = Column(Float, default=0.0)
+    source_filename = Column(String, nullable=True)
+    file_hash = Column(String, nullable=True)
+    is_ancestral = Column(Boolean, default=False)
+    order_index = Column(Integer, default=0) # Chronological position
+    extracted_fields_json = Column(Text, default="{}")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class OwnershipRepository(Base):
+    """
+    Permanent Property Repository: Retains verified historical property identity
+    and lineage references across all uploads, never overwriting past versions.
+    """
+    __tablename__ = "ownership_repository"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    parcel_id = Column(String, unique=True, index=True)
+    survey_no = Column(String, index=True)
+    khata_no = Column(String, index=True)
+    village = Column(String, index=True)
+    mandal = Column(String, default="")
+    district = Column(String, default="")
+    state = Column(String, default="")
+    ulpin = Column(String, nullable=True)
+    latest_verified_owner = Column(String, nullable=False)
+    latest_registration_no = Column(String, nullable=True)
+    recorded_area_sqm = Column(Float, default=0.0)
+    historical_owner_count = Column(Integer, default=1)
+    status = Column(String, default="VERIFIED") # VERIFIED, DISPUTED, UNDER_REVIEW
+    last_verified_at = Column(DateTime, default=datetime.utcnow)
+    title_chain_summary_json = Column(Text, default="[]")
+
+
+class DuplicateClaim(Base):
+    """
+    Automated conflict detection record when a new claimant uploads a deed
+    for an existing parcel already in the repository with a different owner.
+    """
+    __tablename__ = "duplicate_claims"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    parcel_id = Column(String, index=True)
+    survey_no = Column(String, index=True)
+    khata_no = Column(String, index=True)
+    village = Column(String, index=True)
+    district = Column(String, default="")
+    state = Column(String, default="")
+    existing_owner = Column(String, nullable=False)
+    existing_registration_no = Column(String, nullable=True)
+    new_claimant = Column(String, nullable=False)
+    new_registration_no = Column(String, nullable=True)
+    conflict_score = Column(Float, default=0.0) # 0 to 100%
+    conflict_reasons_json = Column(Text, default="[]")
+    status = Column(String, default="PENDING_OFFICER_REVIEW") # PENDING_OFFICER_REVIEW, RESOLVED, DISMISSED
+    created_at = Column(DateTime, default=datetime.utcnow)
+    reviewed_by = Column(String, nullable=True)
+    reviewed_at = Column(DateTime, nullable=True)
+    officer_notes = Column(Text, nullable=True)
+
+
+class OfficerTripleComparison(Base):
+    """
+    Revenue Officer Triple Verification Workspace comparisons across
+    Registration Deed, Revenue Record (RoR), and Survey Report.
+    """
+    __tablename__ = "officer_comparisons"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    comparison_id = Column(String, unique=True, index=True)
+    parcel_id = Column(String, index=True)
+    registration_ocr_json = Column(Text, default="{}")
+    revenue_ocr_json = Column(Text, default="{}")
+    survey_ocr_json = Column(Text, default="{}")
+    comparison_matrix_json = Column(Text, default="[]")
+    overall_confidence_score = Column(Float, default=0.0) # 0 to 100
+    registration_match_score = Column(Float, default=0.0)
+    revenue_match_score = Column(Float, default=0.0)
+    survey_match_score = Column(Float, default=0.0)
+    historical_chain_status = Column(String, default="Verified")
+    duplicate_claim_status = Column(String, default="None")
+    officer_recommendation = Column(Text, default="")
+    officer_decision = Column(String, default="PENDING") # PENDING, APPROVED, REJECTED, CALL_FOR_HEARING
+    officer_notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+

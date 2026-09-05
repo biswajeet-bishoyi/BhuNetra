@@ -338,7 +338,7 @@ def engine_status() -> Dict[str, Any]:
     except ImportError:
         from backend.services import ocr_space_service
 
-    ocr_key = os.getenv("OCR_SPACE_API_KEY", "").strip() or ocr_space_service.DEFAULT_OCR_SPACE_KEY
+    ocr_key = os.getenv("OCR_SPACE_API_KEY", "").strip() or getattr(ocr_space_service, "DEFAULT_OCR_KEY", "K81655746788957")
     groq_key = os.getenv("GROQ_API_KEY", "").strip()
     groq_model = os.getenv("GROQ_VISION_MODEL", "llama-3.2-11b-vision-preview").strip()
     openrouter_key = (

@@ -15,6 +15,14 @@ import BatchUpload from './components/BatchUpload';
 import MutationsView from './components/MutationsView';
 import RiskTimeline from './components/RiskTimeline';
 import DemoWalkthrough from './components/DemoWalkthrough';
+import CitizenPortal from './components/CitizenPortal';
+import BuyerDeedVerification from './components/BuyerDeedVerification';
+import SettlementOfficerWorkflow from './components/SettlementOfficerWorkflow';
+import OfficerTripleWorkspace from './components/OfficerTripleWorkspace';
+import WhatsAppChatbotModal from './components/WhatsAppChatbotModal';
+import EKYCVerificationModal from './components/EKYCVerificationModal';
+import DocumentForensicsModal from './components/DocumentForensicsModal';
+import OdishaBhulekhModal from './components/OdishaBhulekhModal';
 import ConsentDialog, { hasAcceptedConsent, recordDecline, clearConsent } from './components/ConsentDialog';
 import { Shield, Scale, FileCheck, Lock } from 'lucide-react';
 
@@ -42,6 +50,10 @@ export default function App() {
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showFraudAlertModal, setShowFraudAlertModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
+  const [showEKYCModal, setShowEKYCModal] = useState(false);
+  const [showForensicsModal, setShowForensicsModal] = useState(false);
+  const [showOdishaModal, setShowOdishaModal] = useState(false);
   const [parcelsData, setParcelsData] = useState(null);
   const [selectedParcel, setSelectedParcel] = useState(null);
   const [showDemoWalkthrough, setShowDemoWalkthrough] = useState(false);
@@ -186,6 +198,10 @@ export default function App() {
             currentUser={currentUser}
             onOpenLoginModal={() => setShowLoginModal(true)}
             onLogout={handleLogout}
+            onOpenWhatsApp={() => setShowWhatsAppModal(true)}
+            onOpenEKYC={() => setShowEKYCModal(true)}
+            onOpenForensics={() => setShowForensicsModal(true)}
+            onOpenOdishaModal={() => setShowOdishaModal(true)}
           />
 
           {/* Status Tier Modal */}
@@ -206,6 +222,37 @@ export default function App() {
             isOpen={showFraudAlertModal}
             onClose={() => setShowFraudAlertModal(false)}
             selectedParcelId={selectedParcel?.properties?.parcel_id || 'P-105'}
+          />
+
+          {/* WhatsApp Multilingual AI Land Assistant Modal */}
+          <WhatsAppChatbotModal
+            isOpen={showWhatsAppModal}
+            onClose={() => setShowWhatsAppModal(false)}
+            onSelectParcel={handleSelectParcelById}
+          />
+
+          {/* Aadhaar e-KYC Verification Modal */}
+          <EKYCVerificationModal
+            isOpen={showEKYCModal}
+            onClose={() => setShowEKYCModal(false)}
+            parcelId={selectedParcel?.properties?.parcel_id || 'P-OD-102'}
+            ownerName={selectedParcel?.properties?.owner_name || 'Sudrusti Sethi'}
+          />
+
+          {/* Forensic Document Inspector Modal */}
+          <DocumentForensicsModal
+            isOpen={showForensicsModal}
+            onClose={() => setShowForensicsModal(false)}
+            docId="DOC-2026-001"
+            filename="odisha_ror_102.png"
+            parcelId={selectedParcel?.properties?.parcel_id || 'P-OD-102'}
+          />
+
+          {/* Odisha Bhulekh Cadastre Modal */}
+          <OdishaBhulekhModal
+            isOpen={showOdishaModal}
+            onClose={() => setShowOdishaModal(false)}
+            onSelectParcel={handleSelectParcelById}
           />
 
           {/* Guided Demo Walkthrough */}
@@ -236,6 +283,22 @@ export default function App() {
 
             {activeTab === 'ocr' && (
               <OCRScanner onSelectParcel={handleSelectParcelById} />
+            )}
+
+            {activeTab === 'citizen' && (
+              <CitizenPortal onSelectParcel={handleSelectParcelById} />
+            )}
+
+            {activeTab === 'buyer-verify' && (
+              <BuyerDeedVerification onSelectParcel={handleSelectParcelById} />
+            )}
+
+            {activeTab === 'settlement' && (
+              <SettlementOfficerWorkflow onSelectParcel={handleSelectParcelById} />
+            )}
+
+            {activeTab === 'triple-workspace' && (
+              <OfficerTripleWorkspace onSelectParcel={handleSelectParcelById} />
             )}
 
             {activeTab === 'ownership' && (

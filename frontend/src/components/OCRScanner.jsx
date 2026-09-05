@@ -6,6 +6,7 @@ import {
 import DocumentReviewPanel from './DocumentReviewPanel';
 import UPBhulekhHistoryModal from './UPBhulekhHistoryModal';
 import OdishaBhulekhModal from './OdishaBhulekhModal';
+import TitleChainUploadSection from './TitleChainUploadSection';
 
 /**
  * Engine 1 — Document Digitization Workbench.
@@ -239,8 +240,15 @@ export default function OCRScanner({ onSelectParcel }) {
       uploadForm.append('file', blob, filename);
       const uploadRes = await fetch('/api/documents/upload', { method: 'POST', body: uploadForm });
       if (!uploadRes.ok) {
-        const err = await uploadRes.json();
-        setError({ status: uploadRes.status, message: err.detail || 'Upload failed.' });
+        let msg = 'Upload failed.';
+        try {
+          const err = await uploadRes.json();
+          msg = err.detail || msg;
+        } catch {
+          const txt = await uploadRes.text();
+          msg = txt || msg;
+        }
+        setError({ status: uploadRes.status, message: msg });
         setStep(null);
         return;
       }
@@ -256,8 +264,15 @@ export default function OCRScanner({ onSelectParcel }) {
       // 2. Run extraction via the document lifecycle endpoint using OCR.Space Indic Engine
       const extractRes = await fetch(`/api/documents/${uploadData.document_id}/extract?passes=auto&allow_fallback=true&language=${lang}`, { method: 'POST' });
       if (!extractRes.ok) {
-        const err = await extractRes.json();
-        setError({ status: extractRes.status, message: err.detail || 'Extraction failed.' });
+        let msg = 'Extraction failed.';
+        try {
+          const err = await extractRes.json();
+          msg = err.detail || msg;
+        } catch {
+          const txt = await extractRes.text();
+          msg = txt || msg;
+        }
+        setError({ status: extractRes.status, message: msg });
         setStep(null);
         return;
       }
@@ -1126,6 +1141,16 @@ export default function OCRScanner({ onSelectParcel }) {
           )}
         </div>
       </div>
+
+      {/* Multi-Document Title Chain & Ancestral Upload Section */}
+      <TitleChainUploadSection
+        currentExtractedData={result}
+        onChainUpdated={(data) => {
+          if (data && data.parcel_id && onSelectParcel) {
+            // Keep in sync
+          }
+        }}
+      />
 
       <UPBhulekhHistoryModal
         isOpen={upbhulekhModalOpen}

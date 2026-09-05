@@ -205,7 +205,7 @@ export default function DemoWalkthrough({ onClose, onNavigate }) {
   const step = currentStep >= 0 ? STEPS[currentStep] : null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end justify-center pb-4 pointer-events-none">
+    <div className="fixed inset-0 z-[9999] flex items-end justify-center pb-4 pointer-events-none">
       <div className={`glass-panel rounded-2xl border border-slate-700/80 shadow-2xl p-4 w-full max-w-lg mx-4 bg-slate-900/95 backdrop-blur-md space-y-3 pointer-events-auto`}>
         {/* Header */}
         <div className="flex items-center justify-between">

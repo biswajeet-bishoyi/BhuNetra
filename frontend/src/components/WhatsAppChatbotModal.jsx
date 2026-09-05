@@ -66,7 +66,7 @@ export default function WhatsAppChatbotModal({ isOpen, onClose, onSelectParcel }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
       <div className="bg-[#0b141a] border border-slate-800 rounded-2xl w-full max-w-md h-[580px] overflow-hidden flex flex-col shadow-2xl">
         {/* WhatsApp Top Green Bar */}
         <div className="bg-[#1f2c34] p-3 flex items-center justify-between border-b border-slate-800">

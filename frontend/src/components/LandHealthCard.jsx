@@ -64,7 +64,7 @@ export default function LandHealthCard({ parcelId, selectedRole, isOpen, onClose
   const isMediumRisk = payload?.ensemble_risk_level === 'YELLOW';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
       <div className="relative w-full max-w-3xl glass-panel rounded-2xl border border-slate-700/80 shadow-2xl p-6 md:p-8 bg-slate-900/95 text-slate-100 my-8">
         
         {/* Modal Close & Actions */}

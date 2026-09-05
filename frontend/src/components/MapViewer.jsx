@@ -240,7 +240,7 @@ export default function MapViewer({ parcelsData, selectedParcel, setSelectedParc
       />
 
       {/* Map Container */}
-      <div className="lg:col-span-2 glass-panel rounded-2xl overflow-hidden border border-slate-800 relative flex flex-col h-full min-h-[550px]">
+      <div className="lg:col-span-2 glass-panel rounded-2xl overflow-hidden border border-slate-800 relative flex flex-col h-full min-h-[550px] isolate z-0">
         {/* Map Header Overlay */}
         <div className="absolute top-4 left-4 z-[1000] glass-panel px-3.5 py-2 rounded-xl border border-slate-700/80 shadow-2xl flex items-center gap-3 bg-slate-900/95 backdrop-blur-md">
           <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shrink-0"></div>

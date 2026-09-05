@@ -77,7 +77,7 @@ export default function CitizenAlertModal({ isOpen, onClose, selectedParcelId = 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md overflow-y-auto">
       <div className="relative w-full max-w-2xl glass-panel rounded-2xl border border-slate-700/80 shadow-2xl p-6 bg-slate-900/95 text-slate-100 my-8">
         
         {/* Header */}

@@ -1,6 +1,14 @@
 {
   "rewrites": [
     {
+      "source": "/api/:match*",
+      "destination": "https://bhunetra-backend-36fl.onrender.com/api/:match*"
+    },
+    {
+      "source": "/static-data/:match*",
+      "destination": "https://bhunetra-backend-36fl.onrender.com/static-data/:match*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
